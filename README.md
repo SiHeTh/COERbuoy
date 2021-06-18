@@ -9,7 +9,7 @@ Install COERbuoy using pip: pip install https://github.com/SiHeTh/COERbuoy/raw/m
 # Run COERbuoy1
 ## Bretschneider sea state:
 
-With significant wave height 1.5 and wave energy period of 6 and a linear generator damping:
+With significant wave height 1.5 m and wave energy period of 6 s and a linear generator damping:
 
 Windows: python -m COERbuoy --bretschneider_wave 1.5 6 results.csv linear
 
@@ -18,7 +18,7 @@ Linux/MacOS: python3 -m COERbuoy --bretschneider_wave 1.5 6 results.csv linear
 
 ## Regular wave:
 
-With wave height 1.5 and wave period of 6 and a linear generator damping:
+With wave height 1.5 m and wave period of 6 s and a linear generator damping:
 
 Windows: python -m COERbuoy --regular_wave 1.5 6 results.csv linear
 
