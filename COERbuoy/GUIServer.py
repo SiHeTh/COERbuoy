@@ -108,7 +108,7 @@ class GUIServer(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
         if p[0][-3:]=="csv":
-            if os.path.isfile(p[0][1:]):
+            if os.path.isfile(COERbuoy.utils.pkg_dir+"/"+p[0][1:]):
                 print("delivering "+p[0][1:])
                 f = open(COERbuoy.utils.pkg_dir+"/"+p[0][1:],'r')
                 self.send_response(200)
@@ -117,7 +117,7 @@ class GUIServer(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
         elif self.path=="csv":
-            if os.path.isfile(self.path[1:]):
+            if os.path.isfile(COERbuoy.utils.pkg_dir+"/"+self.path[1:]):
                 print("delivering "+self.path[1:])
                 f = open(COERbuoy.utils.pkg_dir+"/"+self.path[1:],'r')
                 self.send_response(200)
