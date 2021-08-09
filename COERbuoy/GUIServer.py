@@ -281,7 +281,7 @@ if __name__ == "__main__":
     hostName="localhost"
     serverPort = 8080;
    
-    with open("settings.txt") as file:
+    with open(COERbuoy.utils.pkg_dir+"/settings.txt") as file:
         data=json.load(file);
         hostName=data.get("host","localhost");
         serverPort=data.get("port",8080);
