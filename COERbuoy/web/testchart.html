@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="main.css">
+    <title>Area Chart - Datetime X-Axis</title>
+
+    <!<link href="../../assets/styles.css" rel="stylesheet" />
+    <script src=jquery/jquery-3.5.1.min.js></script>
+    <script src="apexchart/dist/apexcharts.js"></script>
+    <script src="linechart.js"></script>
+    <script>
+    
+    $(document).ready(function(){
+        var chart1=new ChartFromFile('line',"#chart-timeline");
+        chart1.newChart([]);
+
+        $("#select_states").change(function(){
+            let file=$(this).val();
+            $.ajax({
+                url:file,
+                success:function(result){
+                chart1.fromCSV(result,2,"time [s]","")} });
+            });
+
+        $.getJSON("jobs.json", function(data0){
+            data=data0["jobs"]
+            $(data).each(function(idx){
+                $("#select_states").append(new Option(data[idx]["desc"],data[idx]["name"]));
+            });
+        });
+    });
+</script>
+    <style>
+        #chart {
+        max-width: 650px;
+        width: 100%;
+        margin: 35px auto;
+      }
+    
+      .apextoolbar {
+        margin-left: 45px;
+      }
+    
+      button {
+        background: #fff;
+        color: #222;
+        border: 1px solid #e7e7e7;
+        border-bottom: 2px solid #ddd;
+        border-radius: 2px;
+        padding: 4px 17px;
+      }
+    
+      button.active {
+        color: #fff;
+        background: #008FFB;
+        border: 1px solid blue;
+        border-bottom: 2px solid blue;
+      }
+    
+      button:focus {
+        outline: 0;
+      }
+      
+    </style>    
+  </head>
+
+<body>
+    <ul class="nav">
+        <li><a class="button" href="start.html">Main</a></li>
+        <li><a class="button" href="results.html">Results</a></li>
+        <li><a class="button" href="visuals.html">Visualisation</a></li>
+        <li><a class="button" href="doc.html">Parameters</a></li>
+        <li><a class="button" href="about.html">About</a></li>
+    </ul>
+    <hline>
+    <div class="hcontainer">
+	    <div width="380">
+	    <label for="select_states">Choose a sea state to show:</label>
+	    <br>
+	    <select name="select_states" id="select_states", size="26">
+	    </select>
+	    </div>
+
+	    <div id="chart">
+	        <div class="apextoolbar">
+	          <!-- <button id="three_waves"
+	              class="active">3 waves     
+	          </button>
+	          <button id="all">
+	            ALL
+	          </button> -->
+	        </div>
+	      
+	        <div id="chart-timeline"></div>
+	    </div>
+	  </div>
+    
+  </body>
+</html>

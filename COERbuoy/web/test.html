@@ -1,0 +1,21 @@
+<html>
+<head>
+<title>
+Test
+</title>
+<script src=/jquery/jquery-3.5.1.min.js></script>
+<script>
+$(document).ready(function(){
+  $("button").click(function(){
+    $.getJSON("jobs.json", function(data){
+      alert("Data: " + data["args"]);
+    });
+  });
+});
+</script>
+
+</head>
+<body>
+<button>Refresh</button>
+</body>
+</html>

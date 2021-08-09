@@ -79,7 +79,7 @@ class wavefield:
       phase=alpha[1:int(Y.size/2)]
       omega=omega/t[-1]*(2*np.pi);
     
-      A[np.where(A<0.01)]=0;
+      A[np.where(A<0.001)]=0;
       #cut off high frequencies
       if np.argmax(omega>cut_off)>0:
           oi1 = 0;
@@ -99,7 +99,7 @@ class wavefield:
     #add the radiation wave caused by a current impulse #surge
     def add_diracWave(self,A,t0,bc):
         if (len(self.dw)>0):
-            if t0-self.dw[-1].t0<0.01:
+            if t0-self.dw[-1].t0<0.001:
                 #we are too close to the previous time step
                 #do not add the wave and save computational time
                 return;
@@ -108,7 +108,7 @@ class wavefield:
     #add the radiation wave caused by a current impulse #heave
     def add_diracWave2(self,A,t0,bc):
         if (len(self.dw2)>0):
-            if t0-self.dw2[-1].t0<0.01:
+            if t0-self.dw2[-1].t0<0.001:
                 #we are too close to the previous time step
                 #do not add the wave and save computational time
                 return;

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="main.css">
+    <title>WECmark - Documentation</title>
+    <script src="apexchart/dist/apexcharts.js"></script>
+    <script src=jquery/jquery-3.5.1.min.js></script>
+    <script src="linechart.js"></script>
+    <script>
+    
+
+
+    function showMode(evt, mode){sMode(mode)}
+        
+    function sMode(mode){
+         var chartFKr=new ChartFromFile('line',"#chart-FKr");
+        chartFKr.newChart([]);
+        $.ajax({
+                url:"param/"+mode+"/fk_force.csv",
+                success:function(result){
+                chartFKr.fromCSV(result,0,"draft [m]","Real part of Froude-Krylov-force coefficents [N/m]")} });
+
+        var chartFKi=new ChartFromFile('line',"#chart-FKi");
+        chartFKi.newChart([]);
+        $.ajax({
+                url:"param/"+mode+"/diff_force.csv",
+                success:function(result){
+                chartFKi.fromCSV(result,0,"draft [m]","Imaginary part of Froude-Krylov-force coefficents [N/m]")} });
+
+
+        var chartRad=new ChartFromFile('line',"#chart-rad");
+        chartRad.newChart([]);
+        $.ajax({
+                url:"param/"+mode+"/radiation_force.csv",
+                success:function(result){
+                chartRad.fromCSV(result,0,"draft [m]","Radiation resistance coefficents [Ns/m]")} });
+
+
+        var chartAm=new ChartFromFile('line',"#chart-am");
+        chartAm.newChart([]);
+        $.ajax({
+                url:"param/"+mode+"/added_mass.csv",
+                success:function(result){
+                chartAm.fromCSV(result,0,"draft [m]","Added mass [kg]")} });
+        
+         }
+
+
+    $(document).ready(function(){
+    
+       $("#set_settings").on("click",function(){
+       	$.ajax({url:'set_settings.json',
+                   type: 'POST',
+                   data: "{"+$("#drop_hydro").val()+","+$("#drop_shape").val()+"}",
+                   contentType:'application/json; charset=utf-8',
+                  dataTyp:'json',
+                   success:alert("Restart required!")
+               })
+        });
+
+        $("#send_param").on("click",function(){
+        try{
+            JSON.parse($("#parameters").val())
+            $.ajax({url:'new_param.json',
+                   type: 'POST',
+                   data: $("#parameters").val(),
+                   contentType:'application/json; charset=utf-8',
+                  dataTyp:'json',
+                   success:location.reload(true)
+               })}
+        catch (e) {
+        	alert("No valid JSON!")
+        }               
+               
+        });
+
+        $.ajax({url:'params.json',
+               type: 'GET',
+               contentType:'text/text; charset=utf-8',
+               //dataTyp:'json',
+               success: function(data0){$("#parameters").val(data0);}
+               });
+        $.ajax({url:'settings.json',
+               type: 'GET',
+               contentType:'text/; charset=utf-8',
+               dataTyp:'json',
+               success: function(data0){$("#drop_hydro").val('"hydro":'+'"'+data0["hydro"]+'"');
+               $("#drop_shape").val('"WECfolder":'+'"'+data0["WECfolder"]+'"');}
+               });
+
+        //$.getJSON("params.json", function(data0){
+        //$("#parameters").val(JSON.stringify(data0));
+        //});
+
+        var chart1=new ChartFromFile('line',"#chart-hydro1");
+        chart1.newChart([]);
+        $.ajax({
+                url:"param/HydroParam1.csv",
+                success:function(result){
+                chart1.fromCSV(result,0,"draft [m]","Area [m²], Volume [m³]");
+                //setXzoom(0,4)
+                } });
+                
+                
+        var chart2=new ChartFromFile('line',"#chart-buoyancy");
+        chart2.newChart([]);
+        $.ajax({
+                url:"param/Stiffness.csv",
+                success:function(result){
+                chart2.fromCSV(result,0,"draft [m]","stiffness [N/m]");
+                //setXzoom(0,4)
+                } });
+          
+               
+		  sMode("heave");
+                
+        //var chartRad=new ChartFromFile('line',"#chart-rad");
+        //$("#infoTable")"chartRad.newChart([]);
+        $.ajax({
+                url:"param/info.csv",
+                success:function(result){
+                $("#infoTable").append(readCSV2Table(result,document))} });
+
+    });
+
+    
+</script>
+    <style>
+        #chart {
+        max-width: 650px;
+        margin: 35px auto;
+        width: 100%;
+      }
+    
+      .apextoolbar {
+        margin-left: 45px;
+      }
+      .tab button{
+     float: center;
+     padding 14 px 16px;      
+      }
+        .tab button.active {
+        background-color: #ccc;
+      }
+    
+    </style>    
+  </head>
+
+<body>
+    <ul class="nav">
+        <li><a class="button" href="start.html">Main</a></li>
+        <li><a class="button" href="results.html">Results</a></li>
+        <li><a class="button" href="visuals.html">Visualisation</a></li>
+        <li><a class="button" href="doc.html">Parameters</a></li>
+        <li><a class="button" href="about.html">About</a></li>
+    </ul>
+    <hline>
+    <div class="vcontainer" style="width:90%;">
+    <div>
+    <h3>Hydrodynamic Model and WEC</h3>
+    Hydrodynamic model:
+    <select id="drop_hydro">
+    <option value='"hydro":"Floater_LIN"'>linear BEM</option>
+    <option value='"hydro":"Floater_BEM"'>BEM LUT</option>
+    </select>
+    Body shape:
+    <select id="drop_shape">
+    <option value='"WECfolder":"[data.COERbuoy]"'>COERbuoy</option>
+    <option value='"WECfolder":"[data.OESsphere]"'>OESsphere</option>
+    <option value='"WECfolder":"[data.COERsimple]"'>COERsimple</option>
+    </select>
+    <button id="set_settings">OK</button>
+    </div>
+    <hline>
+    <div class="vcontainer" style="width:90%;">
+    <div>
+    <h3>Parameterisation</h3>
+    Here you can see and edit the parameters of the COERpower device. Confirm changes with "Apply" and the parameter change immediately.</br>
+    </div>
+        <div class="hcontainer" style="width:90%;"> 	 
+	    <div>
+	    <textarea id="parameters" cols="60" rows="10"></textarea>
+    	</br>
+    	<button id="send_param">Apply</button>
+    	</div>
+    	<div>
+    	<h4>Basic parameters:</h4>
+    	<table id="infoTable"></table>
+    	</div>
+    	</div>
+    <div style="width:100%">
+    <h3>Volume, cross-sectional waterplane area and buoancy stiffness</h3>
+    The graph on the left dispalys the volume and the cross-sectional area of the floater in dependence of the subermergence level. The graph on the right plottes the buoyancy stiffness, the negative spring stifnness and the resulting stiffness cure assuming a fixed slider.
+    <div class="hcontainer">    
+	    <div id="chart">
+	        <!--div class="apextoolbar">        </div-->
+	      
+	        <div id="chart-hydro1"></div>
+	    </div>
+       <div id="chart">
+	        <!--div class="apextoolbar">        </div-->
+	      
+	        <div id="chart-buoyancy"></div>
+	    </div>
+    </div>
+    </div>
+    <div class="tab">
+            <button class="tablinks" onclick="showMode(event, 'surge')">Surge</button>
+            <button class="tablinks" onclick="showMode(event, 'heave')">Heave</button>
+            <button class="tablinks" onclick="showMode(event, 'pitch')">Pitch</button>
+	 </div>
+    <div style="width:100%">
+      <h3>Excitation force</h3>
+      Excitation force coefficents with real (left) and imaginary part (right).
+      <div class="hcontainer">  
+        <div id="chart">
+          <div id="chart-FKr"></div>
+        </div>
+        <div id="chart">
+          <div id="chart-FKi"></div>
+        </div>
+      </div>
+    </div>
+    <div style="width:100%">
+      <h3>Hydrodynamic radiation impedance</h3>
+      Radiation resitance (left) and added mass (right).)
+      <div class="hcontainer">  
+        <div id="chart">
+          <div id="chart-rad"></div>
+        </div>
+        <div id="chart">
+          <div id="chart-am"></div>
+        </div>
+      </div>
+    </div>
+    </div>
+    
+  </body>
+</html>

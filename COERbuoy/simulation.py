@@ -12,14 +12,20 @@
 # Dependencies
 import sys;
 import numpy as np;
+import json;
+import time;
+import COERbuoy.utils as utils;
 from COERbuoy import connection;
-from COERbuoy import dynamics_coerbuoy as dyn_wec;
+#from COERbuoy import dynamics_coerbuoy as dyn_wec;
 import pandas;
-from COERbuoy import floater_cb as Floater;
+#from COERbuoy import floater_LIN as Floater;
+from COERbuoy import floater_BEM_LUT_LR as Floater;
 from COERbuoy import wavefield;
 from scipy.interpolate import interp1d;
-omega_cut_off=dyn_wec.omega_cut_off;
-
+#omega_cut_off=dyn_wec.omega_cut_off;
+omega_cut_off=4;
+import os;
+pkg_dir=os.path.dirname(__file__);
 # Debugging feature
 debug=not True;
 
@@ -34,18 +40,29 @@ def start_simu (**kwargs):
     
     import subprocess;
     import time
+    import importlib
     from scipy.integrate import solve_ivp
     
     
     pi=np.pi;
-    dt=0.1;
+    dt=utils.resolution;
     process=0;
+    #read settings
+    #with open(os.path.join(pkg_dir,"settings.txt")) as file:
+    #    data=json.load(file);
+    #    class_hydro=data.get("hydro","Floater");
+    #    WECfolder=data.get("WECfolder","COERbuoy.data.COERbuoy");
+   
+    #dyn_wec=importlib.import_module(utils.wec_dir+".dynamics","COERbuoy");
+    spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.wec_dir,"dynamics.py"));
+    dyn_wec=importlib.util.module_from_spec(spec);
+    spec.loader.exec_module(dyn_wec);
     
     #Set filename    
     filename="output.csv"
     if "name" in kwargs:
         filename=kwargs["name"];
-    Floater.idname=filename;
+    #Floater.idname=filename;
     
     wec=dyn_wec.WEC();
     init_condition=np.zeros(wec.states).tolist()
@@ -110,12 +127,12 @@ def start_simu (**kwargs):
        
     #import matplotlib.pyplot as pyplt;
     
+    omega_cut_off=wec.omega_cut_off;
     # Setting the wave (pocessed in a seperate module)
     wave1=wavefield.wavefield(y,t,omega_cut_off);
     
     # Calculating buoy data
-    wec.load_buoy(wave1.xi,300,0);
-    
+    wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,300,0);
     # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
     steps=np.array(range(0,int(1/dt*t[-1])))*dt;
     
@@ -218,9 +235,11 @@ def start_simu (**kwargs):
             conn_ctrl.openC();
     
     print("Start solver")
+    t_start=time.time();
 
     # Start the ODE-solver
     sol = solve_ivp(dynamics,[0,t[-1]],init_condition,t_eval=steps.tolist(),max_step=0.5*1/(wec.buoy.omega[-1]*2),rtol=0.8,atol=0.8)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
+    print("Elapsed time :"+str(time.time()-t_start)+"\n");
 
     # Write the solution of the data frame
     pandas.DataFrame(np.array([sol.t[:],np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
@@ -297,9 +316,9 @@ def quartil (a, p):
 if __name__=="__main__":
         
     #Few examples how to run different tests:
-    #reg_wave(2,8,"test.txt","linear")
-    #decay_test(1,"decay1.csv",20,"linear")
-    reg_wave(1,4,"output.csv","linear")
+    reg_wave(2,8,"test.txt","linear")
+    #decay_test(0.15,"decay1.csv",10,"linear")
+    #reg_wave(1,4,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 TestController1.py")
      
        

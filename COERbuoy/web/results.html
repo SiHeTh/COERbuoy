@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>
+WECmark - Demo
+</title>
+<link rel="stylesheet" href="main.css">
+<script src=/jquery/jquery-3.5.1.min.js></script>
+<script>
+$(document).ready(function(){doPoll()})
+function doPoll(){
+//  $(test).click(function(){
+    $.getJSON("jobs.json", function(data0){
+      $(tab1).find("tr:gt(0)").remove();
+      data=data0["jobs"]
+      $(data).each(function(idx){
+      row1=document.createElement("tr");
+      id=document.createElement("th");
+      desc=document.createElement("th");
+      stat=document.createElement("th");
+      power=document.createElement("th");
+      button=document.createElement("th");
+      id.innerHTML=data[idx]["id"];
+      desc.innerHTML=data[idx]["desc"];
+      stat.innerHTML=data[idx]["status"];
+      power.innerHTML=data[idx]["power"]+" W";
+      button.innerHTML="<form method=\"get\" action="+data[idx]["name"]+">\
+       <button type=\"submit\">Open data</button>\
+       </form>";
+      //but=document.createElement
+      row1.append(id);
+      row1.append(desc);
+      row1.append(stat);
+      row1.append(power);
+      row1.append(button);
+      $(tab1).append(row1);
+      }); 
+      //alert("Data: " + data + "\nStatus: " + status);
+   if(data0["status"])
+   {
+      $(".status")[0].firstChild.textContent="Busy";
+      setTimeout("doPoll()",5000);}
+   else{
+      $(".status")[0].innerHTML="Finished";}
+   });};
+  //});
+</script>
+
+</head>
+<body>
+<ul class="nav">
+    <li><a class="button" href="start.html">Main</a></li>
+    <li><a class="button" href="results.html">Results</a></li>
+    <li><a class="button" href="visuals.html">Visualisation</a></li>
+        <li><a class="button" href="doc.html">Parameters</a></li>
+    <li><a class="button" href="about.html">About</a></li>
+</ul>
+<hline>
+<div class="status">Status</div>
+<hline>
+<table style="width:100%" id="tab1">
+  <tr>
+    <th>Name</th>
+    <th>Description</th>
+    <th>Status</th>
+    <th>Power</th>
+    <th>Data</th>
+  </tr>
+  <tr>
+    <th>Regular wave 1</th>
+    <th>A=1 m, p=2s</th>
+    <th>Not started</th>
+    <th><button onclick="/data/wavefile.html">
+      Open data
+    </button></th>
+  </tr>
+  <tr>
+    <th>Regular wave 1</th>
+    <th>A=1 m, p=2s</th>
+    <th>Not started</th>
+    <th><button onclick="/data/wavefile.html">
+      Open data
+    </button></th>
+  </tr>
+</table> 
+<br>
+<form method=\"get\" action="/main.html">
+<button type=\"submit\">Go to main page</button>
+</form>
+<button onClick="doPoll(this.id)">Refresh</button>
+<!Power matrix for regular waves:</br>
+<!<img src="ResultsRegular.svg" alt="Power Matrix for regular waves" />
+</body>
+</html>
