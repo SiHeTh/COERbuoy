@@ -110,7 +110,7 @@ class GUIServer(BaseHTTPRequestHandler):
         if p[0][-3:]=="csv":
             if os.path.isfile(p[0][1:]):
                 print("delivering "+p[0][1:])
-                f = open(p[0][1:],'r')
+                f = open(COERbuoy.utils.pkg_dir+"/"+p[0][1:],'r')
                 self.send_response(200)
                 self.send_header("Content-type","text/csv")
                 self.end_headers()
@@ -119,7 +119,7 @@ class GUIServer(BaseHTTPRequestHandler):
         elif self.path=="csv":
             if os.path.isfile(self.path[1:]):
                 print("delivering "+self.path[1:])
-                f = open(self.path[1:],'r')
+                f = open(COERbuoy.utils.pkg_dir+"/"+self.path[1:],'r')
                 self.send_response(200)
                 self.send_header("Content-type","text/csv")
                 self.end_headers()
@@ -138,7 +138,7 @@ class GUIServer(BaseHTTPRequestHandler):
         elif p[0][-3:]=="zip":
             if os.path.isfile(self.path[1:]):
                 print("delivering "+self.path[1:])
-                f = open(self.path[1:],'rb')
+                f = open(COERbuoy.utils.pkg_dir+"/"+self.path[1:],'rb')
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(bytes(f.read()))
@@ -258,11 +258,11 @@ class GUIServer(BaseHTTPRequestHandler):
                             for e in data.items():
                                 strdata=strdata+e[0]+str(e[1])+"_";
                             strdata=strdata[:-1];
-                            name=COERbuoy.utils.pkg_dir+"/results/"+strdata+data1["ctrl"].replace(' ','_')+".csv";
+                            name="results/"+strdata+data1["ctrl"].replace(' ','_')+".csv";
                             desc=strdata+". Using "+data1["ctrl"]+".";
                             print("Created job for "+desc+".")
                             if data["wave"]!="decay_test":
-                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["H"]), float(data["P"]), name, data1["ctrl"]), "name":name, "id":len(jobs)};
+                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["H"]), float(data["P"]), COERbuoy.utils.pkg_dir+"/"+name, data1["ctrl"]), "name":name, "id":len(jobs)};
                             else:
                                 job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["x0"]), name, float(data["t"]), data1["ctrl"]), "name":name, "id":len(jobs)};
                             
