@@ -258,7 +258,7 @@ class GUIServer(BaseHTTPRequestHandler):
                             for e in data.items():
                                 strdata=strdata+e[0]+str(e[1])+"_";
                             strdata=strdata[:-1];
-                            name="results/"+strdata+data1["ctrl"].replace(' ','_')+".csv";
+                            name=COERbuoy.utils.pkg_dir+"/results/"+strdata+data1["ctrl"].replace(' ','_')+".csv";
                             desc=strdata+". Using "+data1["ctrl"]+".";
                             print("Created job for "+desc+".")
                             if data["wave"]!="decay_test":
