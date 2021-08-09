@@ -19,7 +19,7 @@ from COERbuoy import connection;
 #from COERbuoy import dynamics_coerbuoy as dyn_wec;
 import pandas;
 #from COERbuoy import floater_LIN as Floater;
-from COERbuoy import floater_BEM_LUT_LR as Floater;
+from COERbuoy import floater_BEM_LUT as Floater;
 from COERbuoy import wavefield;
 from scipy.interpolate import interp1d;
 #omega_cut_off=dyn_wec.omega_cut_off;
