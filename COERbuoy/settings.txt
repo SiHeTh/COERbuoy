@@ -1,1 +1,1 @@
-{"host": "localhost", "port": 8080, "hydro": "Floater_BEM", "WECfolder": "[data.COERbuoy]", "hydro1": "Floater_BEM", "WECfolder1": "[data.OESsphere]", "resolution": 0.01}
+{"host": "localhost", "port": 8080, "hydro": "Floater_BEM", "WECfolder": "[data.COERbuoy]", "resolution": 0.01}

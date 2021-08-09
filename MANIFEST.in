@@ -2,3 +2,4 @@ graft COERbuoy/data
 graft COERbuoy/web
 graft COERbuoy/results
 graft COERbuoy/param
+include COERbuoy/settings.txt
