@@ -55,6 +55,7 @@ class Floater_BEM(Floater):
                 [res[3][1][0]+1j*res[2][1][0],res[3][1][1]+1j*res[2][1][1],res[3][1][2]+1j*res[2][1][2]],
                 [res[3][2][0]+1j*res[2][2][0],res[3][2][1]+1j*res[2][2][1],res[3][2][2]+1j*res[2][2][2]]];
         am1 = [res[4][0],res[4][1],res[4][2]];
+
         return [fb,exc1,rad1,am1];#F_buoynacy, F_excitation, F_radiation, F_added_mass
     
     #calculate hydro forces from time, wave, heave, surge, pitch, velocity, acceleration
@@ -79,7 +80,7 @@ class Floater_BEM(Floater):
         #Generate wave from movement
         if (np.sum(np.abs(exc1))>0):
             r1=am_omom[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+am_omom[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
-            r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]-Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
+            r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]+Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
             #r1=self.omega*am_omega[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+self.omega*am_omega[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
             #r2=self.omega*am_omega[0][0]/np.conjugate(exc1[0])*(v[0]-Awave[3])+self.omega*am_omega[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
             wave.add_diracWave(-2/np.pi*r1,t,True);

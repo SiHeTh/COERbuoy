@@ -129,7 +129,7 @@ def start_simu (**kwargs):
     
     omega_cut_off=wec.omega_cut_off;
     # Setting the wave (pocessed in a seperate module)
-    wave1=wavefield.wavefield(y,t,omega_cut_off);
+    wave1=wavefield.wavefield.set_wave(y,t,omega_cut_off);
     
     # Calculating buoy data
     wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,300,0);
@@ -180,7 +180,7 @@ def start_simu (**kwargs):
           
           tw=100;
           tw1=tw-1;
-          tseq=np.linspace(t-tw1/4,t,tw);
+          tseq=np.linspace(t-tw1/4,t,int(tw));
           dynamics.tcontrol=t;
           
           # In case the TCP/IP control interface is used (normal operation)
@@ -218,8 +218,7 @@ def start_simu (**kwargs):
       out=wec.Calc(t,wave1,x,dynamics.PTO[i],dynamics.brake[i],dynamics.ulast);
       dynamics.ulast=wec.get_translator_speed(x);
       return out;    
-    
-    dynamics.ts=np.linspace(0,t[-1]+4,(t[-1]+4)*wec.buoy.omega[-1]*2);
+    dynamics.ts=np.linspace(0,t[-1]+4,int((t[-1]+4)*wec.buoy.omega[-1]*2));
     dynamics.ulast=0;
     dynamics.latch_counter=0;
     dynamics.tcontrol=0;
@@ -316,7 +315,7 @@ def quartil (a, p):
 if __name__=="__main__":
         
     #Few examples how to run different tests:
-    reg_wave(2,8,"test.txt","linear")
+    reg_wave(4,5,"test.csv","linear")
     #decay_test(0.15,"decay1.csv",10,"linear")
     #reg_wave(1,4,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 TestController1.py")

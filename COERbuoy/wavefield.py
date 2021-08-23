@@ -64,7 +64,9 @@ class wavefield:
     dw2=[];
     g=9.81;
     rho=1000;
-    def __init__(self, y, t, cut_off):
+    
+    @classmethod
+    def set_wave(cls,y, t, cut_off):
       #Window the wave to avoid hard cuts, leading to high frequencies after FFT
       win = planck_window(len(y)+1,0.14)[0:len(y)]
       
@@ -91,8 +93,11 @@ class wavefield:
       for (a,o) in zip(A,omega):
           print(str(round(o,2))+", "+str(a));
       
+      return cls(A,phase,omega);
+    
+    def __init__(self, A, p, omega):
       self.A=A;
-      self.phase=phase;
+      self.phase=p;
       self.omega=omega;
       self.xi=omega*omega/self.g;
     
