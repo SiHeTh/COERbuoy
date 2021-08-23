@@ -104,8 +104,9 @@ def load_LUT(omegatest):
                 
                 b=np.array(pandas.read_csv(entry.path+"/results/IRF.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+"));
                 for i in np.arange(3):
-                    fr_inf[i]=b[1,1+i*2];
-                LUT[str((int)(h))+"_"+str((int)(p))]=[fe_a,fe_p,fr_m,fr_r,fr_inf]            
+                    #fr_inf[i]=b[1,1+i*2];#Not working wth current data
+                    fr_inf[i]=fr_m[i][i][-1];
+                LUT[str((int)(h))+"_"+str((int)(p))]=[fe_a,fe_p,fr_m,fr_r, fr_inf]            
     print("LUT table h spacing: "+str(h_min)+ ": "+str(h_step)+" : "+str(h_max));
     print("LUT table p spacing: "+str(p_min)+ ": "+str(p_step)+" : "+str(p_max)+"\n");
 # get parameters for body pose specified by heave and pitch (only heave working)
@@ -130,10 +131,11 @@ def get_fromLUT(h,p):
     d2=LUT[str((int)((h2*h_step)*prec))+"_"+str((int)((p1*p_step)*prec))]
     d3=LUT[str((int)((h1*h_step)*prec))+"_"+str((int)((p2*p_step)*prec))]
     d4=LUT[str((int)((h2*h_step)*prec))+"_"+str((int)((p2*p_step)*prec))]
+    d5=LUT[str((int)((h2*h_step)*prec))+"_"+str((int)((p2*p_step)*prec))]
 
     
     d=[[],[],[],[],[]]
-    for idx, (e1,e2,e3,e4) in enumerate(zip(d1,d2,d3,d4)):
+    for idx, (e1,e2,e3,e4,e5) in enumerate(zip(d1,d2,d3,d4,d5)):
         if h_step==0:
             pc=0;
         else:
@@ -153,6 +155,6 @@ if __name__=="__main__":
     print("Result 1:");
     print(get_fromLUT(h_max/2, p_min/2));
     print("Result 2:");
-    print(get_fromLUT(-2, p_min/2)[1]);
+    print(get_fromLUT(-2, p_min/2)[4]);
     print("Result 3:")
-    print(get_fromLUT(0.001, p_min/2)[1]);
+    print(get_fromLUT(0.001, p_min/2)[4]);

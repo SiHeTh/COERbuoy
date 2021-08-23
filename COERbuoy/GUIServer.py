@@ -226,7 +226,8 @@ class GUIServer(BaseHTTPRequestHandler):
             
         if self.path=="/new_param.json":
             txt=self.rfile.read(int(self.headers["Content-Length"]))
-            f = open(COERbuoy.utils.wec_dir+"floater.txt",'wb+')
+            print("Write params to "+COERbuoy.utils.wec_dir+"/floater.txt.")
+            f = open(COERbuoy.utils.wec_dir+"/floater.txt",'wb+')
             f.write(txt);
             f.close();
             Parameters.run();
