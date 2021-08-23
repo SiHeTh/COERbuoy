@@ -114,7 +114,15 @@
                 chart2.fromCSV(result,0,"draft [m]","stiffness [N/m]");
                 //setXzoom(0,4)
                 } });
-          
+        
+        var chart3=new ChartFromFile('line',"#chart-gen");
+        chart3.newChart([]);
+        $.ajax({
+                url:"param/gen_eff.csv",
+                success:function(result){
+                chart3.fromCSV(result,0,"Power [kW]","efficency");
+                //setXzoom(0,4)
+                } });  
                
 		  sMode("heave");
                 
@@ -234,6 +242,19 @@
         </div>
         <div id="chart">
           <div id="chart-am"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="width:100%">
+      <h3>Generator efficency</h3>
+      Generator efficience over applied power.
+      <div class="hcontainer">  
+        <div id="chart">
+          <div id="chart-gen"></div>
+        </div>
+        <div id="chart">
+          <!--div id="chart-am"></div-->
         </div>
       </div>
     </div>

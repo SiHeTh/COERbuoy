@@ -10,6 +10,7 @@ import numpy as np;
 import pandas;
 import COERbuoy.utils as utils;
 from COERbuoy import floater_LIN as Floater;
+from COERbuoy import wavefield;
 import importlib;
 import os;
  
@@ -49,7 +50,8 @@ def run():
     
     
     wec.buoy.Calculate(0,0,0,0);
-    
+        
+            
     for idx,z in enumerate(zs):#calculate parameters for each submergence level
         area[idx]=wec.buoy.Area(z);
         vol[idx]=wec.buoy.Volume(z);
@@ -91,9 +93,34 @@ def run():
         pandas.DataFrame(np.vstack((zs,Frad[mode].round(0).transpose())).transpose(),columns=["Radiation force"]+omega2).to_csv(folder+"radiation_force.csv",index=False)
         pandas.DataFrame(np.vstack((zs,np.concatenate((Amass[mode],Am8[mode].reshape(len(Am8[mode]),1)),axis=1).round(0).transpose())).transpose(),columns=["Added mass"]+omega8).to_csv(folder+"added_mass.csv",index=False)
         pandas.DataFrame(np.vstack((zs,Fdiff[mode].round(0).transpose())).transpose(),columns=["diffraction force"]+omega2).to_csv(folder+"diff_force.csv",index=False)
-        
-    mdc=mdc+wec.pto_mdc();#Get lienarized data from WEC
     
+    #Calculate generator efficancy
+    wave=wavefield.wavefield(omega*0,omega*0,omega);
+    v_max=1;
+    p_max=1000000;
+    n=5;
+    eff=np.zeros([n,n]);
+    #print(eff)
+    
+    speed_s=np.linspace(v_max*0.2,v_max*1.2,n);
+    power_s=np.linspace(p_max*0+0.001,p_max*1.2,n);
+    for idx,s in enumerate(speed_s):
+        for jdx,p in enumerate(power_s):
+            x=np.zeros(wec.states);
+            x[1]=s;
+            #print(1*wec.Calc(0,wave,x,-1*p/s,0,[1,1,1])[8]/(p))
+            eff[jdx][idx]=1*wec.Calc(0,wave,x,-1*p/s,0,[1,1,1])[8]/(p);
+            #print(eff[jdx][idx])
+            
+            
+    print(eff)
+    axis2=[];
+    for s in speed_s:
+        axis2.append("velocity="+str(s.round(2))+"m/s");
+    pandas.DataFrame(np.vstack(((power_s/1000).round(2),eff.round(2).transpose())).transpose(),columns=["Generator_efficency_over_Power[kW]"]+axis2).to_csv(folder0+"gen_eff.csv",index=False)
+    
+    mdc=mdc+wec.pto_mdc();#Get lienarized data from WEC
+
     #... now the linearized eigenfrequencys can be calculated
     deigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0]-(0.5*mdc[1]/mdc[0])**2)
     eigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0])
