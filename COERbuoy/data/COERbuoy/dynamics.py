@@ -23,6 +23,7 @@ import numpy as np;#BSD 3-clause license
 #from .floater_BEM_LUT import Floater_BEM as fl;
 import os;
 import COERbuoy.utils as utils;
+import warnings;
 #floaterfile=pkg_resources.resource_filename(__name__,"floater.txt");
 
 x_lim=3.5; #stroke limit
@@ -93,9 +94,9 @@ class WEC():
             
     #Get linearised mass, damping and spring coefficent        
     def pto_mdc (self):
-        m=(self.mass);
+        m=(self.mass*self.mb);
         d=self.d_add#;+self.Calc_drag(0,1);
-        c=-self.c_fs;
+        c=-self.c_fs/self.l_fs;
         return [m,d,c];
     
     #negative spring force + pre-tension
@@ -115,7 +116,7 @@ class WEC():
       return -self.d_add*(dx1);
     
     def get_surge(self,x):
-        return -1*(x[0]+self.l)*np.sin(x[2]);
+        return (x[0]+self.l)*np.sin(x[2]);
     def get_translator_speed(self,x):
         return x[1];
     def get_translator_speed_surge(self,x):
@@ -130,33 +131,47 @@ class WEC():
         E=self.gen_clambda*dx
         X=self.gen_cL*dx
         
-        if (F_pto == 0):
+        if (np.abs(F_pto) < 0.01):
             return [0, 0];
         
-        if (F_pto*dx>=0):
+        if (F_pto*dx>=0 and np.abs(dx) < 0.01):
             dx=dx+1;
+            
+        if np.abs(dx) < 0.01:
+            return [0, 0];
+        
             
         p=E**2/(F_pto*dx)*0.5;
         q=X**2;
         R=self.gen_Rc;
+        #print([F_pto*dx,p**2-q])
         if (p**2-q>0):
             R=-(p+np.sqrt(p**2-q))
+            #print([0-1,(E/np.sqrt(R**2+X**2))**2*R,F_pto*dx])
+            #print([0-1,((E/np.sqrt(R**2+X**2))**2*R)/(F_pto*dx)])
         else:
-            R=-p+0;
+            R=np.sqrt(q);#The requested damping force is above the limits
+            #print([0-2,(E/np.sqrt(R**2+X**2))**2*R,(F_pto*dx)])
         R=R;
-        Rl=R-self.gen_Rc;
         
+        #in generator mode the minium damping is limited by the internal resitstance
+        if F_pto*dx<0 and R>0 and R<self.gen_Rc:
+            R=self.gen_Rc;#otherwise we need to put energy into the system
+        Rl=R-self.gen_Rc*E/np.abs(E);
+        #print([100,R,Rl])
+            
         
         I=E/np.sqrt(R**2+X**2);
         
         gamma=np.abs(self.gen_I_lim/I);
+        #print(I);
         if gamma < 1:
-            D=0.5*np.pi*(np.arctan(gamma/(1-gamma))+np.sqrt(1-gamma**2));
+            D=2/np.pi*(np.arctan(gamma/np.sqrt(1-gamma))+gamma*np.sqrt(1-gamma**2));
             X=(self.gen_cL*D)*dx;
             I=E/np.sqrt(R**2+X**2);
         
-        Pabs=-Rl*I**2;
-        return [-E**2*R/(R**2+X**2)*1/(dx+0.0001), Pabs];
+        Pabs=-Rl*I**2;#print([E,R,Rl])
+        return [-E**2*R/(R**2+X**2)*1/(dx), Pabs];
       
     #main calculation function, called by ODE solver from main programm
     def Calc(self,t,wave,x,PTO_force,brake,ulast):
@@ -169,11 +184,14 @@ class WEC():
       #x[7] - time integrated generator force
       #x[8] - absorbed energy
       
+      if np.abs(x[2])>3.14:
+          x[2]=np.min([3.14,np.max([-3.14,x[2]])]);
+          x[3]=0;
       alpha=x[2];
       stroke=x[0];
       
-      if PTO_force>0.1:
-          PTO_force=PTO_force+1;
+      #if PTO_force>0.1:
+      #    PTO_force=PTO_force+1;
       
       #Rot. matrix: Global corrdinates (hydro-forces) into body coordinates (PTO forces)
       m_rot=np.array([[np.cos(alpha), -np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]])
@@ -183,7 +201,7 @@ class WEC():
       surge_v= -x[1]*np.sin(x[2]) - self.l*np.cos(x[2])*x[3];
       heave_v= x[1]*np.cos(x[2]) + self.l*np.sin(x[2])*x[3];
       
-      if x[1]>0.1:
+      if np.abs(x[1])>0.1:
           brake=np.max([brake,self.P_mbreak/x[1]]);
       else:
           brake=np.abs(brake);
@@ -197,7 +215,7 @@ class WEC():
       
       f_hy = self.buoy.get_forces(t,wave,heave,surge,alpha,[surge_v,heave_v,0],self.acc)
       #f_hy = self.buoy.get_forces(t,wave,heave,surge,alpha,[x[1]*np.cos(x[2])+x[3]*np.sin(x[2]),-x[1]*np.sin(x[2])+x[3]*np.cos(x[2]),0],self.acc)
-      f_hy[0][0]=f_hy[0][0]-Fdrags;
+      f_hy[0][0]=-1*f_hy[0][0]-Fdrags;
       f_hy[0][1]=f_hy[0][1]-Fdrag-self.mb*g*self.mass;
       F_radax = np.matmul(m_rot,f_hy[0][:2]);
       
@@ -214,10 +232,11 @@ class WEC():
           Pabs=0;
           
       #Calculate all inertia (physical mass+added mass)
-      mah=np.real(f_hy[1][0]*np.sin(np.abs(alpha))+f_hy[1][1]*np.cos(alpha))
-      mas=np.real(f_hy[1][0]*np.cos(np.abs(alpha))+f_hy[1][1]*np.sin(alpha))
-      mass_sum_floater=(self.mass*self.mb+np.real(mah));
-      
+      am=np.real(np.matmul(m_rot,f_hy[1][:2]))#get components of added amss
+      #mah=np.real(f_hy[1][0]*np.sin(np.abs(alpha))+f_hy[1][1]*np.cos(alpha))
+      #mas=np.real(f_hy[1][0]*np.cos(np.abs(alpha))+f_hy[1][1]*np.sin(alpha))
+      mass_sum_floater=(self.mass*self.mb+np.real(am[1]));
+       
       F_sum_floater=F_radax[1]+F_gen+WS+Fd_add+brake;
       F_sum_floater=np.sum(np.real(F_sum_floater));
       self.force_sensor=F_sum_floater;
@@ -237,8 +256,8 @@ class WEC():
           dx[0]=x[1];
           
       
-      dx[3]=((self.l+stroke)*(np.sum(F_radax[0])))/((self.mass+mas)*(self.l+stroke)**2+np.real(f_hy[1][2]));
-          
+      dx[3]=((self.l+stroke)*(np.sum(F_radax[0])))/((self.mass+am[0])*(self.l+stroke)**2+np.real(f_hy[1][2]));
+      
       dx[2]=x[3];
       dx[5]=0;
       dx[4]=0;
