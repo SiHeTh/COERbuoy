@@ -1,0 +1,1 @@
+{"host": "localhost", "port": 8080, "hydro": "Floater_BEM", "WECfolder": "WEC_data", "resolution": 0.01, "status_message":[1,1,1,1,1,1,1,1,1,1]}
