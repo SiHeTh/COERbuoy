@@ -277,8 +277,8 @@ class GUIServer(BaseHTTPRequestHandler):
           
             
                 
-if __name__ == "__main__":
     
+def run():
     hostName="localhost"
     serverPort = 8080;
    
@@ -297,3 +297,6 @@ if __name__ == "__main__":
         pass
     
     webServer.server_close()
+    
+if __name__ == "__main__":
+    run();
