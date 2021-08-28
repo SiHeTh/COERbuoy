@@ -18,8 +18,8 @@ import COERbuoy.utils as utils;
 from COERbuoy import connection;
 #from COERbuoy import dynamics_coerbuoy as dyn_wec;
 import pandas;
-#from COERbuoy import floater_LIN as Floater;
-from COERbuoy import floater_BEM_LUT as Floater;
+from COERbuoy import floater_LIN as Floater;
+#from COERbuoy import floater_BEM_LUT as Floater;
 from COERbuoy import wavefield;
 from scipy.interpolate import interp1d;
 #omega_cut_off=dyn_wec.omega_cut_off;
@@ -32,7 +32,7 @@ debug=not True;
 # Main program
 def start_simu (**kwargs):
 
-    host=not True;
+    host=True;
     interface=False;
     
     conn_ctrl=connection.connection();
@@ -47,6 +47,7 @@ def start_simu (**kwargs):
     pi=np.pi;
     dt=utils.resolution;
     process=0;
+    ctrl="";
     #read settings
     #with open(os.path.join(pkg_dir,"settings.txt")) as file:
     #    data=json.load(file);
@@ -58,6 +59,7 @@ def start_simu (**kwargs):
     dyn_wec=importlib.util.module_from_spec(spec);
     spec.loader.exec_module(dyn_wec);
     
+    print("Using the following WEC: "+utils.wec_dir);
     #Set filename    
     filename="output.csv"
     if "name" in kwargs:
@@ -68,9 +70,9 @@ def start_simu (**kwargs):
     init_condition=np.zeros(wec.states).tolist()
     
     #Set host or client mode
-    if host in kwargs:
-        if kwargs["host"]=="True":
-            host=True;
+    if "host" in kwargs:
+        if kwargs["host"]==False:
+            host=False;
     
     # Define control mode and eventually start control
     # "TCP": A TCP/IP connection is opened, the controller is started manually
@@ -83,15 +85,17 @@ def start_simu (**kwargs):
             interface=False;
         elif kwargs["control"]!="":
             ctrl=kwargs["control"].split(" ");
-            if (ctrl[0]=="octave"):
-                host=True;
-                print("host mode");
-                if (host in kwargs) and  (kwargs["host"]=="False"):
-                    host=False;
-                    
-            print("Start "+ctrl[0]+" "+ctrl[1])
-            process=subprocess.Popen(ctrl)
-            time.sleep(2);
+            #if True:#(ctrl[0]=="octave"):
+                #host=True;
+                #print("host mode");
+                #if ("host" in kwargs) and  (kwargs["host"]=="False"):
+                    #host=False;
+            print(host)
+            if not host:
+                print("Start "+ctrl[0]+" "+ctrl[1])
+                process=subprocess.Popen(ctrl)
+                ctrl="";
+                time.sleep(2);
             interface=True;
     teval=0;
     
@@ -185,15 +189,15 @@ def start_simu (**kwargs):
           
           # In case the TCP/IP control interface is used (normal operation)
           if interface:
-              
+              msg_status=utils.msg_status;
               # Prepare message sent to controller
-              msg={"time":tseq,
-                   "wave":(np.sum(wave1.get(tseq.reshape(tseq.size,1),0)[0],1)),
-                   "wave_forecast":(np.sum(wave1.get(-1*tseq.reshape(tseq.size,1),0)[0],1)),
-                   "stroke_pos":dynamics.xlast.get(0,tseq),
-                   "stroke_speed":dynamics.xlast.get(1,tseq),
-                   "angular_pos":dynamics.xlast.get(2,tseq),
-                   "angular_speed":dynamics.xlast.get(3,tseq),
+              msg={"time":tseq*msg_status[0],
+                   "wave":(np.sum(wave1.get(tseq.reshape(tseq.size,1),0)[0],1))*msg_status[1],
+                   "wave_forecast":(np.sum(wave1.get(-1*tseq.reshape(tseq.size,1),0)[0],1))*msg_status[2],
+                   "stroke_pos":dynamics.xlast.get(0,tseq)*msg_status[3],
+                   "stroke_speed":dynamics.xlast.get(1,tseq)*msg_status[4],
+                   "angular_pos":dynamics.xlast.get(2,tseq)*msg_status[5],
+                   "angular_speed":dynamics.xlast.get(3,tseq)*msg_status[6],
                    "force":dynamics.xlast.get(-1,tseq),
                    "test":np.zeros(100)
                    
@@ -205,7 +209,6 @@ def start_simu (**kwargs):
               dynamics.PTOt=data["time"]
               dynamics.PTO=data["pto"]
               dynamics.brake=data["brake"]
-              
           else:
               # if the TCP/IP control interface is not used, apply a velocity dependent damping
               # (for testing)
@@ -229,6 +232,10 @@ def start_simu (**kwargs):
     
     if interface:
         if host:
+            if (ctrl!=""):
+                print("Start "+ctrl[0]+" "+ctrl[1]);
+                process=subprocess.Popen(ctrl);            
+                ctrl="";
             conn_ctrl.openH();
         else:
             conn_ctrl.openC();
@@ -315,7 +322,10 @@ def quartil (a, p):
 if __name__=="__main__":
         
     #Few examples how to run different tests:
-    reg_wave(4,5,"test.csv","linear")
+    t=np.linspace(0,10,100);
+    #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=False);
+    reg_wave(4,3.5,"test.csv","TCP");#"python3 /media/heiko/Windows/Control_Maynooth/COERbuoy/COERbuoy/examples/custom_controller/controller.py")
+    #reg_wave(4,3.5,"test.csv","linear")
     #decay_test(0.15,"decay1.csv",10,"linear")
     #reg_wave(1,4,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 TestController1.py")

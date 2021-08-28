@@ -75,7 +75,7 @@ def run():
     omega2=[];
     
     #Write data
-    folder0="param/";
+    folder0=utils.pkg_dir+"/param/";
     mod_name={0:"surge/",1:"heave/",2:"pitch/"}
     folder=folder0;
     pandas.DataFrame(np.vstack((zs,area,vol)).transpose(),columns=["z-offset","cross-sec.area","volume"]).round(2).to_csv(folder+"HydroParam1.csv",index=False)
@@ -98,7 +98,7 @@ def run():
     wave=wavefield.wavefield(omega*0,omega*0,omega);
     v_max=1;
     p_max=1000000;
-    n=5;
+    n=20;
     eff=np.zeros([n,n]);
     #print(eff)
     
@@ -124,7 +124,7 @@ def run():
     #... now the linearized eigenfrequencys can be calculated
     deigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0]-(0.5*mdc[1]/mdc[0])**2)
     eigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0])
-    pandas.DataFrame(np.vstack((mdc[0],mdc[1],mdc[2],eigfreq,deigfreq,wec.buoy.Calc_CoG())).transpose(),columns=["mass","damping","stiffness","eigenperiod","damped eigenperiod","Center of Gravity"]).round(2).to_csv(folder0+"info.csv",index=False)
+    pandas.DataFrame(np.vstack((mdc[0],mdc[1],mdc[2],eigfreq,deigfreq,wec.buoy.Calc_CoG())).transpose(),columns=["mass[kg]","damping [Ns/m]","stiffness [N/m]","eigenperiod [s]","damped eigenperiod [s]","center of gravity (heave) [m]"]).round(2).to_csv(folder0+"info.csv",index=False)
 
     #clearning up
     wec.release();
