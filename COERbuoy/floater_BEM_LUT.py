@@ -59,7 +59,11 @@ class Floater_BEM(Floater):
         return [fb,exc1,rad1,am1];#F_buoynacy, F_excitation, F_radiation, F_added_mass
     
     #calculate hydro forces from time, wave, heave, surge, pitch, velocity, acceleration
-    def get_forces(self, t, wave, z0, x0, delta0, v, a):
+    def get_forces(self, t, wave, p, v, a):
+        z0=p[1];
+        x0=p[0];
+        delta0=p[2];
+        
         Awave=wave.get(t,x0);
         eta=np.sum(Awave[0]);
         

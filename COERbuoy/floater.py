@@ -97,8 +97,9 @@ class Cone:
       c_dy=[c_dy_s.copy(),c_dy_h.copy(),c_dy_p.copy()*0]
           
       
-      
-      return np.array([F_st,c_dy]);
+      #print(F_st)
+      #print(c_dy)
+      return np.array([F_st,F_st]);
   
   def Radius(self,z0):
       if(z0>self.z1) and (z0<=self.z2):      
@@ -154,8 +155,8 @@ class Floater:
         self.elements=[];
         self.d=depth;
         self.CoG=CoG;
-        self.file = open(idname+"_f.csv", "w")
-        self.file.write("time,wave,buoyancy,FK,rad\r\n");
+        #self.file = open(idname+"_f.csv", "w")
+        #self.file.write("time,wave,buoyancy,FK,rad\r\n");
         if len(args)>0:
             with open(args[0]) as file:
                 geo=json.load(file);
@@ -192,7 +193,7 @@ class Floater:
         
         return [forces[0],0,0,0];
     
-    def get_forces(self, t, wave, z0, x0, delta0, v, a):
+    def get_forces(self, t, wave, p, v, a):
         
         #self.file.write(str(t)+","+str(eta)+","+str(Fb)+","+str(FK)+","+str(Frad)+"\r\n");
         return [0,0];
@@ -257,5 +258,5 @@ class Floater:
         return vol;
     
     def clear(self):
-        self.file.close();
+        #self.file.close();
         self.elements.clear();

@@ -77,7 +77,7 @@ class WEC():
       #F_FKS_h=F_FKS[0][1]+np.sum(np.real(F_FKS[1][1])*Acos-Asin*np.imag(F_FKS[1][1]))
       #radForce=np.zeros(3);
       
-      f_hy = self.buoy.get_forces(t,wave,heave,0*surge,alpha,[0,x[1],0],self.acc)
+      f_hy = self.buoy.get_forces(t,wave,[surge*0,heave,alpha],[0,x[1],0],self.acc)
       
       F_h=f_hy[0];
       m0=f_hy[1];

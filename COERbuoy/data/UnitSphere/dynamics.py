@@ -195,7 +195,7 @@ class WEC():
       Fdrags=self.Calc_drag_surge(surge,surge_v);
       
       
-      f_hy = self.buoy.get_forces(t,wave,heave,surge,alpha,[x[1]*np.cos(x[2])+x[3]*np.sin(x[2]),-x[1]*np.sin(x[2])+x[3]*np.cos(x[2]),0],self.acc)
+      f_hy = self.buoy.get_forces(t,wave,[surge,heave,alpha],[x[1]*np.cos(x[2])+x[3]*np.sin(x[2]),-x[1]*np.sin(x[2])+x[3]*np.cos(x[2]),0],self.acc)
       f_hy[0][0]=f_hy[0][0]-Fdrags;
       f_hy[0][1]=f_hy[0][1]-Fdrag-self.mb*g*self.mass;
       F_radax = np.matmul(m_rot,f_hy[0][:2]);
