@@ -55,10 +55,12 @@ class WEC():
             data=json.load(file);
             #generator damping (only for testing)
             self.damping =data.get("PTO_damping",100000);
-            #negatie spring stiffnes
-            self.c_fs=data.get("negative_spring_stiffness",20*1000*9.81);
+            #negative spring force
+            self.c_fs=data.get("negative_spring_force",20*1000*9.81);
             #length of negative spring
             self.l_fs=data.get("negative_spring_length",2.0);
+            #stroke of negative sprng
+            self.s_fs=data.get("negative_spring_stroke",2.0*1.4);
             #Drag coefficent heave
             self.cD=data.get("viscous_drag_heave",0.2);
             #Drag coefficent surge
@@ -91,6 +93,8 @@ class WEC():
             self.gen_I_lim=data.get("generator_I_s",100000);
             #mooring line length
             self.l=data.get("l_mooring",30);
+            #angle limit
+            self.alpha_lim=data.get("angle_limit",18)*(3.14/180);
             
     #Get linearised mass, damping and spring coefficent        
     def pto_mdc (self):
@@ -101,7 +105,8 @@ class WEC():
     
     #negative spring force + pre-tension
     def Calc_fs_spring(self,x1,x2):
-      return self.c_fs*np.arctan((x1-x2)/self.l_fs)+self.Calc_fs_pretension();
+      l=np.min([np.max([-self.s_fs,x1-x2]),self.s_fs])
+      return self.c_fs*np.arctan(l/self.l_fs)+self.Calc_fs_pretension();
     #pre-tension (constant)
     def Calc_fs_pretension(self):
       return -self.mass*(1-self.mb)*g
@@ -167,7 +172,11 @@ class WEC():
         #print(I);
         if gamma < 1:
             D=2/np.pi*(np.arctan(gamma/np.sqrt(1-gamma))+gamma*np.sqrt(1-gamma**2));
-            X=(self.gen_cL*D)*dx;
+            #print(X)
+            #print(D)
+            X=(self.gen_cL*(1+(1-D)))*dx;
+            #print("over")
+            #print(X)
             I=E/np.sqrt(R**2+X**2);
         
         Pabs=-Rl*I**2;#print([E,R,Rl])
@@ -184,9 +193,10 @@ class WEC():
       #x[7] - time integrated generator force
       #x[8] - absorbed energy
       
-      if np.abs(x[2])>3.14:
-          x[2]=np.min([3.14,np.max([-3.14,x[2]])]);
-          x[3]=0;
+      
+      if np.abs(x[2])>self.alpha_lim*1.1:
+          x[2]=np.min([self.alpha_lim,np.max([-self.alpha_lim,x[2]])]);
+      #x[3]=0;
       alpha=x[2];
       stroke=x[0];
       
@@ -194,7 +204,7 @@ class WEC():
       #    PTO_force=PTO_force+1;
       
       #Rot. matrix: Global corrdinates (hydro-forces) into body coordinates (PTO forces)
-      m_rot=np.array([[np.cos(alpha), -np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]])
+      m_rot=np.array([[np.cos(alpha),np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]])
       
       heave=(stroke+self.l)*np.cos(alpha)-self.l;
       surge=self.get_surge(x);
@@ -213,12 +223,12 @@ class WEC():
       Fdrags=self.Calc_drag_surge(surge,surge_v);
       
       
-      f_hy = self.buoy.get_forces(t,wave,heave,surge,alpha,[surge_v,heave_v,0],self.acc)
+      f_hy = self.buoy.get_forces(t,wave,[surge,heave,alpha],[surge_v,heave_v,0],self.acc)
       #f_hy = self.buoy.get_forces(t,wave,heave,surge,alpha,[x[1]*np.cos(x[2])+x[3]*np.sin(x[2]),-x[1]*np.sin(x[2])+x[3]*np.cos(x[2]),0],self.acc)
-      f_hy[0][0]=-1*f_hy[0][0]-Fdrags;
+      f_hy[0][0]=-f_hy[0][0]-Fdrags;
       f_hy[0][1]=f_hy[0][1]-Fdrag-self.mb*g*self.mass;
       F_radax = np.matmul(m_rot,f_hy[0][:2]);
-      
+      #print([f_hy[0][0],F_radax[0]])
       
       #PTO-forces:
       #negative spring, including pre-tension
@@ -232,7 +242,7 @@ class WEC():
           Pabs=0;
           
       #Calculate all inertia (physical mass+added mass)
-      am=np.real(np.matmul(m_rot,f_hy[1][:2]))#get components of added amss
+      am=np.real(np.matmul(m_rot,f_hy[1][:2]))#get components of added mass
       #mah=np.real(f_hy[1][0]*np.sin(np.abs(alpha))+f_hy[1][1]*np.cos(alpha))
       #mas=np.real(f_hy[1][0]*np.cos(np.abs(alpha))+f_hy[1][1]*np.sin(alpha))
       mass_sum_floater=(self.mass*self.mb+np.real(am[1]));
@@ -256,9 +266,22 @@ class WEC():
           dx[0]=x[1];
           
       
-      dx[3]=((self.l+stroke)*(np.sum(F_radax[0])))/((self.mass+am[0])*(self.l+stroke)**2+np.real(f_hy[1][2]));
-      
+      dx[3]=((self.l+stroke)*(np.sum(F_radax[0])))/((self.mass+am[0])*(self.l+stroke)**2+np.real(f_hy[1][2])*0);
+      #print([F_radax[0],f_hy[0][0],self.mb*g*self.mass*np.sin(x[2])])
+      #print(x[2])
+      #dx[3]=f_hy[0][0];
       dx[2]=x[3];
+      
+      if ((x[2]>self.alpha_lim)and(dx[2]>0)):
+          
+          dx[2]=0#alpha_lim;
+          if dx[3]>0:
+              dx[3]=-dx[2]*10;
+      if ((x[2]<-self.alpha_lim)and(dx[2]<0)):
+          #dx[3]=-dx[2]*10;
+          dx[2]=0#-alpha_lim;
+          if dx[3] < 0:
+              dx[3]=-dx[2]*10;
       dx[5]=0;
       dx[4]=0;
       dx[7]=0;
