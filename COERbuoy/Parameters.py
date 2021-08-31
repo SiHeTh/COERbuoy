@@ -96,14 +96,14 @@ def run():
     
     #Calculate generator efficancy
     wave=wavefield.wavefield(omega*0,omega*0,omega);
-    v_max=1;
-    p_max=1000000;
-    n=20;
+    v_max=2.5;
+    p_max=500000;
+    n=8;
     eff=np.zeros([n,n]);
     #print(eff)
     
-    speed_s=np.linspace(v_max*0.2,v_max*1.2,n);
-    power_s=np.linspace(p_max*0+0.001,p_max*1.2,n);
+    speed_s=np.linspace(v_max*0.5,v_max*1.5,n);
+    power_s=np.linspace(p_max*0+100,p_max*1.2,n);
     for idx,s in enumerate(speed_s):
         for jdx,p in enumerate(power_s):
             x=np.zeros(wec.states);

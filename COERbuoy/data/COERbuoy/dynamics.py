@@ -62,11 +62,11 @@ class WEC():
             #stroke of negative sprng
             self.s_fs=data.get("negative_spring_stroke",2.0*1.4);
             #Drag coefficent heave
-            self.cD=data.get("viscous_drag_heave",0.2);
+            self.cD=data.get("viscous_drag_coefficient_heave",0.2);
             #Drag coefficent surge
-            self.cDs=data.get("viscous_drag_surge",0.5);
+            self.cDs=data.get("viscous_drag_coefficient_surge",0.5);
             #Percentage mass floater
-            self.mb=data.get("mass_percent_floater",0.25);
+            self.mb=data.get("mass_fraction_floater",0.25);
             #added mass floater
             self.m0=data.get("added_mass",self.mass);
             #generator efficency

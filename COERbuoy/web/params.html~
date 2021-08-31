@@ -70,7 +70,7 @@
                    data: $("#parameters").val(),
                    contentType:'application/json; charset=utf-8',
                   dataTyp:'json',
-                   success:setTimeout(function(){location.reload(true)},2000);
+                   success:setTimeout(function(){location.reload(true)},2000)
                })}
         catch (e) {
         	alert("No valid JSON!")
