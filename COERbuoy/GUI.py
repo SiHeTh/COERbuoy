@@ -14,6 +14,7 @@ import os.path
 import json;
 import threading;
 import COERbuoy.Parameters as Parameters;
+import webbrowser;
 import COERbuoy.utils;
 #import svgwrite
 #from svgwrite import mm, deg
@@ -289,6 +290,7 @@ def run():
     print("Bind to "+hostName+" at port "+str(serverPort)+".")
     #HTTPServer.socket.setsockopt(socket.SOL_SOCKeT, socket.SO_REUSEADDR,1);
     webServer = ThreadingHTTPServer((hostName, serverPort), GUIServer)
+    webbrowser.open("http://localhost:8080")
     try:
         webServer.serve_forever()
     except KeyboardInterrupt:
