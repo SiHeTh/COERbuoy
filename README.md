@@ -24,7 +24,7 @@ NOTE: The commands how to run python might differ between systems, and the ones 
 
 ## 2. Installation
 
-Download [python3] (https://www.python.org/downloads/).
+Download [python3](https://www.python.org/downloads/).
 
 Install COERbuoy using pip:
 

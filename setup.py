@@ -6,7 +6,7 @@ setup(
    author='Simon H. Thomas',
    author_email='simon.thomas.2021@mumail.ie',
    packages=['COERbuoy'],
-   url='coerbuoy.maynoothuniversity.ie',
+   url='http://coerbuoy.maynoothuniversity.ie',
    license='LICENSE.txt',
    description='A realistic Wave Enegery Converter model to evaluate controllers',
    long_description=open('README.txt').read(),
