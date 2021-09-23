@@ -30,19 +30,19 @@ Install COERbuoy using pip:
 
 | Windows                   |
 |:--------------------------|
-|`py -m pip install https://github.com/SiHeTh/COERbuoy/raw/main/dist/COERbuoy-0.1.5-py3-none-any.whl`|             
+|`py -m pip install COERbuoy`|             
 
 | Linux/MacOS                     |
 |:--------------------------------|
-| `pip install https://github.com/SiHeTh/COERbuoy/raw/main/dist/COERbuoy-0.1.5-py3-none-any.whl`|
+| `python3 -m pip install COERbuoy`|
 
-## 3. Run COERbuoy1
+## 3. Run COERbuoy
 
 Run graphical user interface:
 
 | Windows                   | &nbsp;&nbsp; | Linux/MacOS                     |
 |:--------------------------|--------------|:--------------------------------|
-|`py -m COERbuoy.GUI`       |              | `python3 -m COERbuoy.GUIServer` |
+|`py -m COERbuoy.GUI`       |              | `python3 -m COERbuoy.GUI      ` |
 
 
 ### 3.1. Command line:
