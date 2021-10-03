@@ -20,6 +20,7 @@ with open(fp) as file:
     class_hydro=data.get("hydro","Floater_BEM");
     wec_dir=data.get("WECfolder","[COERbuoy.data.COERbuoy]");
     resolution=data.get("resolution",0.1);
+    dt_controller=data.get("dt_controller",0.1);
     msg_status=data.get("status_message",[1,1,1,1,1,1,1,1,1,1]);
  
 if wec_dir[0] == '[' and wec_dir[-1]==']':
