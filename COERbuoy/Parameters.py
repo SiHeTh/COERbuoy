@@ -91,7 +91,7 @@ def run():
         folder=folder0+mod_name[mode];
         pandas.DataFrame(np.vstack((zs,Fdyn[mode].round(0).transpose())).transpose(),columns=["Froude-Krylov force"]+omega2).to_csv(folder+"fk_force.csv",index=False)
         pandas.DataFrame(np.vstack((zs,Frad[mode].round(0).transpose())).transpose(),columns=["Radiation force"]+omega2).to_csv(folder+"radiation_force.csv",index=False)
-        pandas.DataFrame(np.vstack((zs,np.concatenate((Amass[mode],Am8[mode].reshape(len(Am8[mode]),1)),axis=1).round(0).transpose())).transpose(),columns=["Added mass"]+omega8).to_csv(folder+"added_mass.csv",index=False)
+        pandas.DataFrame(np.vstack((zs,np.concatenate((Amass[mode],Am8[mode].reshape(len(Am8[mode]),1)),axis=1).round(2).transpose())).transpose(),columns=["Added mass"]+omega8).to_csv(folder+"added_mass.csv",index=False)
         pandas.DataFrame(np.vstack((zs,Fdiff[mode].round(0).transpose())).transpose(),columns=["diffraction force"]+omega2).to_csv(folder+"diff_force.csv",index=False)
     
     #Calculate generator efficancy
