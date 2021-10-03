@@ -132,7 +132,7 @@ def start_simu (**kwargs):
     #import matplotlib.pyplot as pyplt;
     
     omega_cut_off=wec.omega_cut_off;
-    # Setting the wave (pocessed in a seperate module)
+    # Setting the wave (processed in a seperate module)
     wave1=wavefield.wavefield.set_wave(y,t,omega_cut_off);
     
     # Calculating buoy data
@@ -162,7 +162,9 @@ def start_simu (**kwargs):
             if (len(self.t)<2):
                 return t*0;
             fin=interp1d(self.t,self.x[i],fill_value=0,bounds_error=False);
-            return fin(t)
+            res=fin(t);
+            res[-1]=self.x[i][-1];
+            return res;
           
     
     # This is the ODE function
@@ -180,7 +182,7 @@ def start_simu (**kwargs):
       # While the ODE solver can jump forth and back in time; the control is only executed
       # the first time a specific time is passed
       # This is not _exact_, but a good compramise between computational complexity and accuracy
-      if t-dynamics.tcontrol>0.19 or t-dynamics.tcontrol<0:
+      if t-dynamics.tcontrol>utils.dt_controller or t-dynamics.tcontrol<0:
           
           tw=100;
           tw1=tw-1;
@@ -193,7 +195,7 @@ def start_simu (**kwargs):
               # Prepare message sent to controller
               msg={"time":tseq*msg_status[0],
                    "wave":(np.sum(wave1.get(tseq.reshape(tseq.size,1),0)[0],1))*msg_status[1],
-                   "wave_forecast":(np.sum(wave1.get(-1*tseq.reshape(tseq.size,1),0)[0],1))*msg_status[2],
+                   "wave_forecast":(np.sum(wave1.get(2*t-np.flip(tseq.reshape(tseq.size,1)),0)[0],1))*msg_status[2],
                    "stroke_pos":dynamics.xlast.get(0,tseq)*msg_status[3],
                    "stroke_speed":dynamics.xlast.get(1,tseq)*msg_status[4],
                    "angular_pos":dynamics.xlast.get(2,tseq)*msg_status[5],
@@ -209,6 +211,7 @@ def start_simu (**kwargs):
               dynamics.PTOt=data["time"]
               dynamics.PTO=data["pto"]
               dynamics.brake=data["brake"]
+              
           else:
               # if the TCP/IP control interface is not used, apply a velocity dependent damping
               # (for testing)
@@ -258,7 +261,7 @@ def start_simu (**kwargs):
     
     # Output the absorbed power
     power=(sol.y[8,-1]-sol.y[8,s])/(sol.t[-1]-sol.t[s])
-    print("Absorbed power: "+str((power/1000).round(2))+" kW")
+    print("Mean absorbed power: "+str((power/1000).round(2))+" kW")
     
     
     # CLose the TCP/IP control interface connection
@@ -309,7 +312,12 @@ def bretschneider_wave(Hs,p,n,ctrl):
         
     return start_simu(time=t,wave=y,name=n, t0=t0, control=ctrl )
 
-
+def get_WEC_data():
+    f = open(utils.wec_dir+"/floater.txt",'r')
+    data=json.load(f);
+    f.close();
+    return data; 
+    
 def quartil (a, p):
     a=np.abs(a);
     b=np.sort(a);
@@ -324,10 +332,10 @@ if __name__=="__main__":
     #Few examples how to run different tests:
     t=np.linspace(0,10,100);
     #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=False);
-    reg_wave(4,3.5,"test.csv","TCP");#"python3 /media/heiko/Windows/Control_Maynooth/COERbuoy/COERbuoy/examples/custom_controller/controller.py")
+    #reg_wave(4,3.5,"test.csv","TCP");#"python3 /media/heiko/Windows/Control_Maynooth/COERbuoy/COERbuoy/examples/custom_controller/controller.py")
     #reg_wave(4,3.5,"test.csv","linear")
     #decay_test(0.15,"decay1.csv",10,"linear")
     #reg_wave(1,4,"output.csv","linear")
-    #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 TestController1.py")
+    bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
        
