@@ -11,7 +11,7 @@ import numpy as np;
 from scipy.optimize import minimize_scalar;
 import COERbuoy.utils as utils;
 #from Floater import Floater as fl;
-from floater_BEM_LUT import Floater_BEM as fl;
+#Ffrom COERbuoy.floater_BEM_LUT import Floater_BEM as fl;
 import os;
 
 
@@ -84,26 +84,44 @@ class WEC():
      # print(heave,f_hy[0])
       Fdrag=0#self.Calc_drag(x[0],x[1]);
       
+      #set added mass by hand (because NEMOH results are weired)
       
+      def get_am(heave,wave,t):
+          Awave=wave.get(t,0);
+          eta=np.sum(Awave[0]);
+          d=(heave-eta+0.15)/0.3;
+          if d<=0.5:
+              m1=np.max([d,0]);
+          if d>0.5:
+              m1=np.min([(d-0.5)*0.07/0.3+0.5,1]);
+          if d>0.8:
+              m1=np.min([(d-0.8)+0.57,1]);
+          return [0,m1*0.15**3*4/3*3.14*1000,0];
+        
+      m0=get_am(heave,wave,t)
       dx=np.zeros(10);
       #m0[1]=self.buoy.Volume(heave*-1)*1000*0.5;
       #print(t,heave,m0[1])
       dP=0;
-      if False:#(t-self.t_old)>0:
-          print(t-self.t_old)
+      if (t-self.t_old)>0.01:
+          #print(t-self.t_old)
           #param=self.buoy.Calculate(heave, 0, 0, 0);
           if False:#x[1]>0:
               dP=0#0.5*(np.imag(param[2][1][0])-self.amlow_old)/(t-self.t_old)*x[1];
           else:
-              self.am_old=self.buoy.get_forces(t,wave,heave+x[1]*0.01,0*surge,alpha,[0,x[1],0],self.acc)[1][1];
-              dP=-0.5*(m0[1]-self.am_old)/(0.01)*x[1];
-              #dP=-1*(m0[1]-self.am_old)/(t-self.t_old)*x[1];
+              self.am_old=self.buoy.get_forces(t,wave,[0,heave+x[1]*0.01,alpha],[0,x[1],0],self.acc)[1];
+              self.am_old=get_am(heave+x[1]*0.01,wave,t)
+              #added_mass
+              dP=-(m0[1]-self.am_old[1])/(0.01)*x[1];
+              
+              
+              #dP=-1*(m0[1]-self.am_old[1])/(t-self.t_old)*x[1];
           
-              self.am_old=m0[1];
+              self.am_old=m0;
               #print(np.imag(param[2][1][0]))
               #self.amlow_old=np.imag(param[2][1][0]);
               self.t_old=t;
-              print([self.am_old,m0[1],dP/(x[1]+0.0001)])
+              #print([self.am_old,m0[1],dP/(x[1]+0.0001)])
       
       self.v_old=x[1];
       F_sum_x=F_h[1]-self.mass*g+Fdrag-dP;

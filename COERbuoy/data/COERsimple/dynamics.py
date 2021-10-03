@@ -198,18 +198,28 @@ class WEC():
       #Calculate all inertia (physical mass+added mass)
       mah=np.real(f_hy[1][1])
       mass_sum_floater=(self.mass+np.real(mah*0));
-      print(heave,f_exc)
+      #print(heave,f_exc)
+      if (np.sum(np.real(f_exc))>=0):
+          brake=-1*brake;
       F_sum_floater=f_exc;
       F_sum_floater=np.sum(np.real(F_sum_floater));
       self.force_sensor=F_sum_floater;
-      
-      
-      #Fill dx vector
-      
+      #print([np.sum(np.real(f_exc)),brake])
       dx=np.zeros(10);
-      dx[1]=(F_sum_floater)/mass_sum_floater;
-      dx[0]=x[1];
+      #Fill dx vector
+      if np.abs(F_sum_floater)<abs(brake):
+          dx[1]=-x[1]*10;
+          print(x[1])
+          dx[0]=x[1];
+          F_gen=0;
+          Pabs=0;
+      else:
+          dx[1]=(F_sum_floater+brake)/mass_sum_floater;
+          self.force_sensor=F_sum_floater+brake;
+          dx[0]=x[1];
           
+      
+     
       
       dx[3]=0;
           

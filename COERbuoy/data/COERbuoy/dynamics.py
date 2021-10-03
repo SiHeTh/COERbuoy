@@ -95,6 +95,9 @@ class WEC():
             self.l=data.get("l_mooring",30);
             #angle limit
             self.alpha_lim=data.get("angle_limit",18)*(3.14/180);
+            #limit to 1D
+            self.heave_only=data.get("heave_only",0);
+            self.heave_only=1-self.heave_only;
             
     #Get linearised mass, damping and spring coefficent        
     def pto_mdc (self):
@@ -257,7 +260,7 @@ class WEC():
       dx=np.zeros(10);
       #if machinery or static friction too high: PTO-stuck, no speed, no force
       if np.abs(F_sum_floater-brake)<brake or (np.abs(F_sum_floater)<self.fr_s and np.abs(x[1])<0.01):
-          dx[1]=0;
+          dx[1]=-x[1]*10;
           dx[0]=0;
           F_gen=0;
           Pabs=0;
@@ -282,6 +285,8 @@ class WEC():
           dx[2]=0#-alpha_lim;
           if dx[3] < 0:
               dx[3]=-dx[2]*10;
+      dx[3]=dx[3]*self.heave_only;
+      dx[2]=dx[2]*self.heave_only;
       dx[5]=0;
       dx[4]=0;
       dx[7]=0;
