@@ -246,14 +246,14 @@ class GUIServer(BaseHTTPRequestHandler):
             if not busy:# not busy:
                 print(busy)
                 jobs.clear();
-                #For security reasons only allow known command to be executed
-                if not (data1["ctrl"]=="python3 Controller_NL_TCP.py" 
-                        or data1["ctrl"]=="python3 Controller_LIN_TCP.py"
-                        or data1["ctrl"]=="python3 LatchingForce_TCP.py"
-                        or data1["ctrl"]=="linear"
-                        or data1["ctrl"]=="python3 Conroller_brake_1.py"
-                        or data1["ctrl"]=="ocatve Extremiumcontroller2.m"):
-                    data1["ctrl"]="linear";
+                ##For security reasons only allow known command to be executed;
+                ##can be removed in local installation
+                #if not (data1["ctrl"]=="python3 Controller_NL_TCP.py" 
+                #        or data1["ctrl"]=="python3 Controller1.py"
+                #        or data1["ctrl"]=="py Controller1.py"
+                #        or data1["ctrl"]=="linear"
+                #        or data1["ctrl"]=="ocatve Extremiumcontroller2.m"):
+                #    data1["ctrl"]="linear";
                 for data in data1["sea_states"]:
                             print(data)
                             strdata="";
@@ -264,9 +264,9 @@ class GUIServer(BaseHTTPRequestHandler):
                             desc=strdata+". Using "+data1["ctrl"]+".";
                             print("Created job for "+desc+".")
                             if data["wave"]!="decay_test":
-                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["H"]), float(data["P"]), COERbuoy.utils.pkg_dir+"/"+name, data1["ctrl"]), "name":name, "id":len(jobs)};
+                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["H"]), float(data["P"]), os.path.join(COERbuoy.utils.pkg_dir,name), data1["ctrl"]), "name":name, "id":len(jobs)};
                             else:
-                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["x0"]), name, float(data["t"]), data1["ctrl"]), "name":name, "id":len(jobs)};
+                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["x0"]), os.path.join(COERbuoy.utils.pkg_dir,name), float(data["t"]), data1["ctrl"]), "name":name, "id":len(jobs)};
                             
                             jobs.append(job);
                 busy=True;
