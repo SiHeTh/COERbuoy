@@ -26,6 +26,10 @@ class Floater_BEM(Floater):
     BEMexc=np.array([[],[]]);
     BEMrad=np.array([[],[]]);
     BEMam=np.array([[],[]]);
+    rad_set=False;
+    rad_old=np.NaN;
+    p_old=np.NaN;
+    t_old=0;
     
     def __init__ (self, xi, g, depth, CoG, *args):
         super().__init__(xi, g, depth, CoG, *args);
@@ -45,7 +49,7 @@ class Floater_BEM(Floater):
             return [fb,en,np.array([en,en,en]),[0,0,0]]
         
         draft=eta+z0;#current submergence
-         
+        
         res = LUT.get_fromLUT(draft,0);
         exc1 = res[0];
         #exc1 = res[0]*np.cos(res[1])+1j*res[0]*np.sin(res[1]);
@@ -75,6 +79,12 @@ class Floater_BEM(Floater):
         am1 = np.array(res[3]);#added mass @ inf
         #am1=[0,Floater.added_mass(self,z0),0];
         
+        if not self.rad_set:
+            self.rad_old=am_omega;
+            self.p_old=p;
+            self.rad_set=True;
+            self.t_old=0.1;
+            
         am_omom=am_omega#*self.omega;
         #print(am_omom[1][1])
         #am_omom[0][0]=am_omom[0][0]-am_omom[0][0][-1];
@@ -85,8 +95,15 @@ class Floater_BEM(Floater):
         if (np.sum(np.abs(exc1))>0):
             r1=am_omom[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+am_omom[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
             r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]+Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
-            #r1=self.omega*am_omega[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+self.omega*am_omega[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
-            #r2=self.omega*am_omega[0][0]/np.conjugate(exc1[0])*(v[0]-Awave[3])+self.omega*am_omega[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
+            
+            
+            ##
+            #r3=r1-0*((-self.rad_old[1][1]+am_omega[1][1])/np.conjugate(exc1[1])*(p[1]-self.p_old[1])+(-self.rad_old[0][1]+am_omega[0][1])/np.conjugate(exc1[1])*(p[0]-self.p_old[0]));
+            #r4=r2-0*((-self.rad_old[1][0]+am_omega[1][0])/np.conjugate(exc1[0])*(p[1]-self.p_old[1])+(-self.rad_old[0][0]+am_omega[0][0])/np.conjugate(exc1[0])*(p[0]-self.p_old[0]));
+            
+            #r1=r3;
+            #r2=r4;
+            
             wave.add_diracWave(-2/np.pi*r1,t,True);
             wave.add_diracWave2(-2/np.pi*r2,t,True);
         
@@ -96,4 +113,9 @@ class Floater_BEM(Floater):
             ret[i]=res[0][i]+FK;#buoyance + FK force
         Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.conjugate(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*np.conjugate(exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
+        
+        self.t_old=t;
+        self.rad_old=am_omega;
+        self.z0_old=z0;
+            
         return [np.real(ret),[am1[0],am1[1],am1[2]]];#hydro force, added mass @ inf
