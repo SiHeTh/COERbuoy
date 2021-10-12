@@ -14,11 +14,13 @@ from COERbuoy import wavefield;
 import importlib;
 import os;
  
-spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.wec_dir,"dynamics.py"));
-dynamics=importlib.util.module_from_spec(spec);
-spec.loader.exec_module(dynamics);
 #import dynamics_sphere as dynamics
 def run():
+    utils.get();
+    
+    spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.wec_dir,"dynamics.py"));
+    dynamics=importlib.util.module_from_spec(spec);
+    spec.loader.exec_module(dynamics);
     wec=dynamics.WEC();
     omega=np.round(np.linspace(0.1,wec.omega_cut_off,10),10);#select frequency used
     xi=omega*omega/9.81;#

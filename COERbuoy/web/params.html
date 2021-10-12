@@ -58,7 +58,8 @@
                    data: "{"+$("#drop_hydro").val()+","+$("#drop_shape").val()+"}",
                    contentType:'application/json; charset=utf-8',
                   dataTyp:'json',
-                   success:alert("Restart required!")
+                  success:setTimeout(function(){location.reload(true)},2000)
+                   //success:alert("Restart required!")
                })
         });
 
@@ -177,7 +178,7 @@
     </select>
     Body shape:
     <select id="drop_shape">
-    <option value='"WECfolder":"[data.COERbuoy]"'>COERbuoy1</option>
+    <option value='"WECfolder":"[data.COERbuoy1]"'>COERbuoy1</option>
     <option value='"WECfolder":"[data.OESsphere]"'>OESsphere</option>
     <option value='"WECfolder":"[data.COERsimple]"'>COERsimple</option>
     </select>

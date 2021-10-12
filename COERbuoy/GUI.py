@@ -218,12 +218,13 @@ class GUIServer(BaseHTTPRequestHandler):
             with open(COERbuoy.utils.pkg_dir+"/settings.txt",'w') as jfile:
                 jfile.write(json.dumps(sets));
             #f.write(txt);
-            #f.close();
-            #Parameters.run();
             self.send_response(200);
             #self.send_header('Content-type','text/html');
             #self.send_header('Location','/start.html');
             self.end_headers();
+            COERbuoy.utils.get();
+            Parameters.run();
+            
             
         if self.path=="/new_param.json":
             txt=self.rfile.read(int(self.headers["Content-Length"]))
@@ -233,8 +234,6 @@ class GUIServer(BaseHTTPRequestHandler):
             f.close();
             Parameters.run();
             self.send_response(200);
-            #self.send_header('Content-type','text/html');
-            #self.send_header('Location','/start.html');
             self.end_headers();
             
         elif self.path=="/run.html" :   

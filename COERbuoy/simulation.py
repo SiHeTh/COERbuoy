@@ -31,13 +31,12 @@ debug=not True;
 
 # Main program
 def start_simu (**kwargs):
-
     host=True;
     interface=False;
-    
-    conn_ctrl=connection.connection();
-    
-    
+    utils.get();
+    conn_ctrl=connection.connection(ip = utils.conn_ip, port = utils.conn_port);
+
+
     import subprocess;
     import time
     import importlib
@@ -196,6 +195,9 @@ def start_simu (**kwargs):
               msg={"time":tseq*msg_status[0],
                    "wave":(np.sum(wave1.get(tseq.reshape(tseq.size,1),0)[0],1))*msg_status[1],
                    "wave_forecast":(np.sum(wave1.get(2*t-np.flip(tseq.reshape(tseq.size,1)),0)[0],1))*msg_status[2],
+                   ##Wave dependent on the position not time; can be used for visualisation
+                   #"wave":(np.sum(wave1.get(t,np.linspace(60,0,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[1],
+                   #"wave_forecast":(np.sum(wave1.get(t,np.linspace(0,-60,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[2],
                    "stroke_pos":dynamics.xlast.get(0,tseq)*msg_status[3],
                    "stroke_speed":dynamics.xlast.get(1,tseq)*msg_status[4],
                    "angular_pos":dynamics.xlast.get(2,tseq)*msg_status[5],
@@ -234,6 +236,7 @@ def start_simu (**kwargs):
     dynamics.xlast=history([0]*(len(init_condition)+1));
     
     if interface:
+        print("Using control interface with ip "+conn_ctrl.ip+" at port " + str(conn_ctrl.port) +".")
         if host:
             if (ctrl!=""):
                 print("Start "+ctrl[0]+" "+ctrl[1]);
@@ -254,7 +257,7 @@ def start_simu (**kwargs):
     pandas.DataFrame(np.array([sol.t[:],np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
     s=np.argmax(sol.t>teval)
 
-    # free data from the wave and teh WEC
+    # free data from the wave and the WEC
     wave1.clear();
     del wave1;
     wec.release();
@@ -278,7 +281,7 @@ def start_simu (**kwargs):
 def decay_test(x0, n, t, ctrl):
     t2=np.arange(0,t,1/(omega_cut_off))
     y=0*t2;
-    return start_simu(time=t2,wave=y,name=n, t0=0, init=[x0, 0, 0.5], control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*A**2*p)
+    return start_simu(time=t2,wave=y,name=n, t0=0, init=[x0, 0, 0], control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*A**2*p)
 
 # Regular wave (Height, period, name, control)
 def reg_wave(H,p,n,ctrl):
@@ -332,10 +335,10 @@ if __name__=="__main__":
     #Few examples how to run different tests:
     t=np.linspace(0,10,100);
     #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=False);
-    #reg_wave(4,3.5,"test.csv","TCP");#"python3 /media/heiko/Windows/Control_Maynooth/COERbuoy/COERbuoy/examples/custom_controller/controller.py")
-    #reg_wave(4,3.5,"test.csv","linear")
+    #reg_wave(4,3.5,"test.csv","python3 Controller1.py");
+    reg_wave(4,3.5,"test.csv","linear")
     #decay_test(0.15,"decay1.csv",10,"linear")
     #reg_wave(1,4,"output.csv","linear")
-    bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
+    #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
        
