@@ -43,6 +43,7 @@ class WEC():
     def __init__(self):
         self.force_sensor=0;
         self.Ar=[[],[],[]];
+        utils.get();
         return;
         
     def load_buoy(self,floater_class,xi,depth,cog):
@@ -199,8 +200,8 @@ class WEC():
       mah=np.real(f_hy[1][1])
       mass_sum_floater=(self.mass+np.real(mah*0));
       #print(heave,f_exc)
-      if (np.sum(np.real(f_exc))>=0):
-          brake=-1*brake;
+      if (x[1]>=0):
+          brake=-1*abs(brake);
       F_sum_floater=f_exc;
       F_sum_floater=np.sum(np.real(F_sum_floater));
       self.force_sensor=F_sum_floater;
@@ -209,7 +210,7 @@ class WEC():
       #Fill dx vector
       if np.abs(F_sum_floater)<abs(brake):
           dx[1]=-x[1]*10;
-          print(x[1])
+          #print(x[1])
           dx[0]=x[1];
           F_gen=0;
           Pabs=0;

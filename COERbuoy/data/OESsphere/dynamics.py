@@ -28,6 +28,7 @@ class WEC():
     acc=0;
     def __init__(self):
         self.force_sensor=0;
+        utils.get();
         self.cD=0.09;
         self.damping=0;
         return;
@@ -85,7 +86,6 @@ class WEC():
       Fdrag=0#self.Calc_drag(x[0],x[1]);
       
       #set added mass by hand (because NEMOH results are weired)
-      
       def get_am(heave,wave,t):
           Awave=wave.get(t,0);
           eta=np.sum(Awave[0]);
@@ -96,7 +96,7 @@ class WEC():
               m1=np.min([(d-0.5)*0.07/0.3+0.5,1]);
           if d>0.8:
               m1=np.min([(d-0.8)+0.57,1]);
-          return [0,m1*0.15**3*4/3*3.14*1000,0];
+          return [0,m1*0.15**3*2/3*3.14*1000,0];
         
       m0=get_am(heave,wave,t)
       dx=np.zeros(10);
@@ -109,10 +109,10 @@ class WEC():
           if False:#x[1]>0:
               dP=0#0.5*(np.imag(param[2][1][0])-self.amlow_old)/(t-self.t_old)*x[1];
           else:
-              self.am_old=self.buoy.get_forces(t,wave,[0,heave+x[1]*0.01,alpha],[0,x[1],0],self.acc)[1];
+              #self.am_old=self.buoy.get_forces(t,wave,[0,heave+x[1]*0.01,alpha],[0,x[1],0],self.acc)[1];
               self.am_old=get_am(heave+x[1]*0.01,wave,t)
               #added_mass
-              dP=-(m0[1]-self.am_old[1])/(0.01)*x[1];
+              dP=-0.5*(m0[1]-self.am_old[1])/(0.01)*x[1];
               
               
               #dP=-1*(m0[1]-self.am_old[1])/(t-self.t_old)*x[1];
@@ -124,7 +124,7 @@ class WEC():
               #print([self.am_old,m0[1],dP/(x[1]+0.0001)])
       
       self.v_old=x[1];
-      F_sum_x=F_h[1]-self.mass*g+Fdrag-dP;
+      F_sum_x=F_h[1]-self.mass*g+Fdrag+dP;
       
       F_sum_y=F_h[0];
       
