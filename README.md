@@ -1,7 +1,7 @@
 # COERbuoy
 ### A realistic Wave Enegery Converter model to evaluate controllers
 
-NOTE: The commands how to run python might differ between systems, and the ones presented here might not work on every machine. Please refer to https://www.python.org/downloads/ to find the correct commands for your system.
+NOTE: The commands how to run python might differ between systems, and the ones presented here might not work on every machine. Please refer to https://www.python.org/ to find the correct commands for your system.
 <br>
 ## 1. Repository structure
 - COERbuoy (program data)
@@ -32,7 +32,7 @@ Install COERbuoy using pip:
 |:--------------------------|
 |`py -m pip install COERbuoy`|             
 
-| Linux/MacOS                     |
+| Windows/Linux/MacOS              |
 |:--------------------------------|
 | `python3 -m pip install COERbuoy`|
 
@@ -40,7 +40,7 @@ Install COERbuoy using pip:
 
 Run graphical user interface:
 
-| Windows                   | &nbsp;&nbsp; | Linux/MacOS                     |
+| Windows                   | &nbsp;&nbsp; | Windows/Linux/MacOS             |
 |:--------------------------|--------------|:--------------------------------|
 |`py -m COERbuoy.GUI`       |              | `python3 -m COERbuoy.GUI      ` |
 
@@ -53,7 +53,7 @@ Brettschneider wave with significant wave height 1.5 m and wave energy period of
 |:--------------------------|
 |`py -m COERbuoy --bretschneider_wave 1.5 6 results.csv linear`|             
 
-| Linux/MacOS                     |
+| Windows/Linux/MacOS             |
 |:--------------------------------|
 | `python3 -m COERbuoy --bretschneider_wave 1.5 6 results.csv linear`|
 
@@ -63,7 +63,7 @@ Regular wave with height 1.5 m and period of 6 s and a linear generator damping:
 |:--------------------------|
 |`py -m COERbuoy --regular_wave 1.5 6 results.csv linear`|             
 
-| Linux/MacOS                     |
+| Windows/Linux/MacOS             |
 |:--------------------------------|
 | `python3 -m COERbuoy --regular_wave 1.5 6 results.csv linear`|
 
