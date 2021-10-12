@@ -62,6 +62,7 @@ class WEC():
     force_sensor=0;
     
     def __init__(self):
+        utils.get();
         self.force_sensor=0;
         self.Ar=[[],[],[]];
         return;
