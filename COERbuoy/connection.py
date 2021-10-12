@@ -17,9 +17,6 @@ import threading;
 import time;
 import struct
 
-#set default address
-TCP_IP = 'localhost'
-TCP_PORT = 5050
 BUFFER_SIZE = 1024*8;
 BUFFER_SIZE_IN=9*4*8;
 
@@ -44,13 +41,19 @@ msg_ctrl={"time":np.zeros(9),
 class connection():
     socket=[];
     conn=[];
+    ip="localhost";
+    port=0;
     
+    def __init__(self, ip = 'localhost', port = 5050):
+        self.ip=ip;
+        self.port=port;
+        
     #connect socket as client
     def openC(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.settimeout(10);
-        self.socket.connect((TCP_IP, TCP_PORT))
+        self.socket.connect((self.ip, self.port))
     def close(self):
         print("close socket")
         if self.conn:
@@ -135,7 +138,7 @@ class connection():
         self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.settimeout(10);
-        self.socket.bind((TCP_IP, TCP_PORT))
+        self.socket.bind((self.ip, self.port))
         self.socket.listen()
         self.conn, addr = self.socket.accept()
         
