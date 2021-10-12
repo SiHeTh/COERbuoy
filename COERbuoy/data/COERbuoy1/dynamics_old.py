@@ -211,7 +211,7 @@ class WEC():
       
       heave=(stroke+self.l)*np.cos(alpha)-self.l;
       surge=self.get_surge(x);
-      surge_v= -x[1]*np.sin(x[2]) - self.l*np.cos(x[2])*x[3];
+      surge_v= -x[1]*np.sin(x[2]) + self.l*np.cos(x[2])*x[3];
       heave_v= x[1]*np.cos(x[2]) + self.l*np.sin(x[2])*x[3];
       
       if np.abs(x[1])>0.1:
@@ -235,13 +235,13 @@ class WEC():
       
       #PTO-forces:
       #negative spring, including pre-tension
-      WS=self.Calc_fs_spring(x[0],0);
+      WS=0#self.Calc_fs_spring(x[0],0);
       #Machinery damping
       Fd_add=self.Calc_dadd(x[1],0);
       #Generator force
       [F_gen, Pabs]=self.calc_PTO(PTO_force,x[1]);
       #Do not consider power absorbed above constraints
-      if (abs(x[0]>x_lim)):
+      if (abs(x[0])>x_lim):
           Pabs=0;
           
       #Calculate all inertia (physical mass+added mass)
