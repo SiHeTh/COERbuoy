@@ -18,7 +18,6 @@ import pandas;#BSD 3-clause license
 import numpy as np;#BSD 3-clause license
 from scipy.interpolate import interp1d;#BSD 3-clause license
 #BEMdir=pkg_resources.resource_filename(__name__,"data/BEM");
-bem_dir=os.path.join(utils.wec_dir,"BEM");
 
 # Values for whitch BEM data is available min:step:max
 # p-pitch, h-heave
@@ -37,7 +36,7 @@ def interpolate(x,y,o):
 LUT={};
     
 # Load look up table
-def load_LUT(omegatest):  
+def load_LUT(omegatest, bem_dir):  
     global h_min, h_max, p_min, p_max, h_step, p_step;
     p_max=0;
     p_min=-0;
@@ -91,7 +90,7 @@ def load_LUT(omegatest):
                 for i in np.arange(3):
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),delimiter="\s+"));
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),delimiter="\s+"));
-                    b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+"));
+                    b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+",engine="python"));
                     if np.isnan(b[0,0]):
                         b=b[:,1:];
                     fr_m[0][i]=interpolate(omega,b[:,1].copy(),o)
@@ -102,7 +101,7 @@ def load_LUT(omegatest):
                     fr_r[2][i]=interpolate(omega,b[:,6].copy(),o)
                 
                 
-                b=np.array(pandas.read_csv(entry.path+"/results/IRF.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+"));
+                b=np.array(pandas.read_csv(entry.path+"/results/IRF.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+",engine="python"));
                 for i in np.arange(3):
                     #fr_inf[i]=b[1,1+i*2];#Not working wth current data
                     fr_inf[i]=fr_m[i][i][-1];

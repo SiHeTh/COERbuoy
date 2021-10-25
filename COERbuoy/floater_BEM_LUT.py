@@ -19,6 +19,7 @@ Created on Fri Aug 28 08:55:59 2020
 from COERbuoy.floater import Floater;
 import numpy as np;
 from COERbuoy import LUT_hydro as LUT;
+import os;
 
 pi=np.pi;
 
@@ -33,7 +34,7 @@ class Floater_BEM(Floater):
     
     def __init__ (self, xi, g, depth, CoG, *args):
         super().__init__(xi, g, depth, CoG, *args);
-        LUT.load_LUT(np.sqrt(xi*9.81));
+        LUT.load_LUT(np.sqrt(xi*9.81),os.path.join(os.path.dirname(args[0]),"BEM"));
         
     #calculate hydrodnymaic parmeters from heave, surge, pitch, surface elevation
     def Calculate(self, z0, x0, delta0, eta):

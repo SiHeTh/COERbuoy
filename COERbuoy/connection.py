@@ -52,7 +52,7 @@ class connection():
     def openC(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.settimeout(10);
+        self.socket.settimeout(1000);
         self.socket.connect((self.ip, self.port))
     def close(self):
         print("close socket")
@@ -140,7 +140,9 @@ class connection():
         self.socket.settimeout(10);
         self.socket.bind((self.ip, self.port))
         self.socket.listen()
+        print("Connection opened; Please start the client!")
         self.conn, addr = self.socket.accept()
+        print("Connection with client established!")
         
 #------------------------------------------------------------------------------
 #Only for testing
