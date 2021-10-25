@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta charset="utf-8" />
 <title>
 The COERbuoy platform
 </title>
@@ -8,6 +9,14 @@ The COERbuoy platform
 
 <script type="text/javascript" >
 	$(document).ready(function(){
+	
+	$.getJSON("controllers.json", function(data){
+      $(data).each(function(idx,txt){
+      o1=document.createElement("option");
+      o1.value=txt;
+      o1.innerHTML=txt;
+      $(sel_ctrl).append(o1)})
+      });
 	
 	$("#run_single").on("click",function(){
 	                        job=[{"wave":$("#wavetype").val(),
@@ -50,13 +59,13 @@ The COERbuoy platform
 	     }  
 	     run_job(job);                                                              
 	});
-	$("#brettschneider_batch").on("click",function(){
+	$("#bretschneider_batch").on("click",function(){
 	     job=[];
 	     for (p of [3.5,5,6.5])
 	     {
 	       for (A of [0.75, 1.25])
 	       {
-	           job.push({"wave":"brettschneider_wave",
+	           job.push({"wave":"bretschneider_wave",
 	                             "H":A,
 	                             "P":p});
 	       }
@@ -87,7 +96,8 @@ The COERbuoy platform
     <li><a class="button" href="start.html">Main</a></li>
     <li><a class="button" href="results.html">Results</a></li>
     <li><a class="button" href="visuals.html">Visualisation</a></li>
-        <li><a class="button" href="doc.html">Parameters</a></li>
+    <li><a class="button" href="doc.html">Parameters</a></li>
+    <li><a class="button" href="settings.html">Settings</a></li>
     <li><a class="button" href="about.html">About</a></li>
 </ul>
 <h1>Welcome to the COERbuoy platform!</h1>
@@ -100,12 +110,8 @@ The COERbuoy platform
 		<div class="box">
 		Please choose from one of the following options:
 		</br></br>
-		Control method:
+		<span class="help">Control method:<div class="helptext">List all files from the custom control folder. This folder can be set in the settings tab</div></span>
 		  <select id="sel_ctrl" name="Control">
-		    <option value="linear">Linear Damping</option>
-          <!Enter a custom controller like this:<!>		    
-		    <!option value="py C:\\users\me\controller\controller1.py">Custom_controller<!/option>
-		    <! <option value="TCP">Open TCP<!</option>
 		  </select> 
 		</br></br>
 		<div class="box">
@@ -113,9 +119,13 @@ The COERbuoy platform
 			</br>
 			  <select id="wavetype" name="WaveType">
 			    <option value="regular_wave">Regular wave</option>
-			    <option value="brettschneider_wave">Bretschneider</option>
-			  </select>, H=
-			  <input type="number" id="amplitude" name="WaveAmp" step="0.01" size="4", value="1.5"> </input> m, p=
+			    <option value="bretschneider_wave">Bretschneider</option>
+			  </select>,
+			  <span class="help">H<div class="helptext">wave height (regular wave), significant wave height (bretschneider spectrum)</div></span>
+			  =
+			  <input type="number" id="amplitude" name="WaveAmp" step="0.01" size="4", value="1.5"> </input> m, 
+			  <span class="help">p<div class="helptext">wave period (regular wave), wave energy period (bretschneider spectrum)</div></span>
+			  =
 			  <input type="number" id="period" name="WavePer" step="0.01" size="4" value="3.5"> </input> s. 
 			  </select>
 			  <button id="run_single" data-cont='{"sea_states":[{"wave":"regular_wave","H":1,"P":3.5,"ctrl":"linear"}]}' >Run</button>
@@ -127,7 +137,7 @@ The COERbuoy platform
 			</br>
 			  <button id="regular_batch">Regular waves</button>
 			</br>
-			  <button id="brettschneider_batch">Bretschneider waves</button>
+			  <button id="bretschneider_batch">Bretschneider waves</button>
 			</br>
 			  <button id="regular_sweep">Regular period sweep, H=1.5</button>
 			</br>
@@ -136,7 +146,8 @@ The COERbuoy platform
 			
          Decay test:
 			</br>
-			  z_start = <input type="number" id="x0" name="decay_height" step="0.01" size="4", value="1"> </input> m, t=
+			  <span class="help">z_0<div class="helptext">initial vertical (z) offset</div></span>
+			   = <input type="number" id="x0" name="decay_height" step="0.01" size="4", value="1"> </input> m, t=
 			  <input type="number" id="tdecay" name="decay_time" step="0.01" size="4" value="10"> </input> s. 
 			  <button id="run_decay" data-cont='{"tests":[{"wave":"decay_test","x0","t":3.5,"ctrl":"linear"}]}' >Run</button>
 	   

@@ -6,6 +6,19 @@ margin:0;
 background-color:#DDD;
 padding:0;}
 
+.help{position: relative;
+display: inline-block;
+border-bottom: 1px dotted black;}
+.help .helptext{visibility:hidden;
+background-color:  #FFC;
+position: absolute;
+opacity: 0;
+transition:  opacity 0.2;}
+
+.help:hover .helptext {
+visibility: visible;
+opacity: 1;}
+
 .hcontainer{width=90%;display:flex;
 flex-direction:row;
 justify-content:left;
