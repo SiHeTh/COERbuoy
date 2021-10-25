@@ -8,12 +8,7 @@ Created on Fri Aug 28 08:55:59 2020
 
 import numpy as np;
 import json;
-from scipy.integrate import dblquad as int2d;
-from scipy.special import jv as bessel;
-from scipy.signal import hilbert as KramerKronig;
-from scipy.optimize import fsolve;
 #from scipy.fftpack import hilbert as KramerKronig;
-from scipy.interpolate import interp1d;
 
 pi=np.pi;
 #wave=wavefield.wavefield(np.zeros(20),np.linspace(1,20),2)
