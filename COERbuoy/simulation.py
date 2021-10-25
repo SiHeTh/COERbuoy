@@ -10,15 +10,13 @@
 # Main file
 
 # Dependencies
-import sys;
 import numpy as np;
 import json;
-import time;
 import COERbuoy.utils as utils;
 from COERbuoy import connection;
+from COERbuoy import floater_LIN as Floater;
 #from COERbuoy import dynamics_coerbuoy as dyn_wec;
 import pandas;
-from COERbuoy import floater_LIN as Floater;
 #from COERbuoy import floater_BEM_LUT as Floater;
 from COERbuoy import wavefield;
 from scipy.interpolate import interp1d;
@@ -47,6 +45,7 @@ def start_simu (**kwargs):
     dt=utils.resolution;
     process=0;
     ctrl="";
+    ctrlcmd="";
     #read settings
     #with open(os.path.join(pkg_dir,"settings.txt")) as file:
     #    data=json.load(file);
@@ -83,18 +82,30 @@ def start_simu (**kwargs):
         elif kwargs["control"]=="linear":
             interface=False;
         elif kwargs["control"]!="":
-            ctrl=kwargs["control"].split(" ");
-            #if True:#(ctrl[0]=="octave"):
-                #host=True;
-                #print("host mode");
-                #if ("host" in kwargs) and  (kwargs["host"]=="False"):
-                    #host=False;
+            ctrl0=kwargs["control"].split(" ");
             print(host)
+            ctrlcmd=="";
+            if len(ctrl0)>1: #ctrl command already provided
+                ctrlcmd=ctrl0[0];
+                ctrl=utils.get_controller(ctrl0[1]);
+    
+            if len(ctrl0)==1: #get control command from extension
+                ctrl=utils.get_controller(ctrl0[0]);
+                ext=ctrl0[0].split(".")
+                if len(ext)>1: #check if there is file extension at all
+                    ext=ext[-1];
+                    ctrlcmd=utils.cmddict.get(ext,"");
+                
             if not host:
-                print("Start "+ctrl[0]+" "+ctrl[1])
-                process=subprocess.Popen(ctrl)
-                ctrl="";
-                time.sleep(2);
+                if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
+                    print("Start "+ctrl)
+                    process=subprocess.Popen(ctrl)
+                    ctrl="";
+                else:
+                    print("Start "+ctrl[0]+" "+ctrl[1])
+                    process=subprocess.Popen([ctrlcmd,ctrl])
+                    ctrl="";
+            time.sleep(2);
             interface=True;
     teval=0;
     
@@ -220,7 +231,7 @@ def start_simu (**kwargs):
               dynamics.PTOt=[t]
               dynamics.PTO=[-wec.get_translator_speed(x)*wec.damping];
               dynamics.brake=[0];
-      
+      print(str(np.round(100*t/dynamics.duration,0))+"% completed", end="\r");
       i=np.abs(np.array(dynamics.PTOt)-t).argmin();
       # Send the data to the WEC
       out=wec.Calc(t,wave1,x,dynamics.PTO[i],dynamics.brake[i],dynamics.ulast);
@@ -233,20 +244,26 @@ def start_simu (**kwargs):
     dynamics.PTO=[0];
     dynamics.PTOt=[0];
     dynamics.brake=[0];
+    dynamics.duration=t[-1];
     dynamics.xlast=history([0]*(len(init_condition)+1));
     
     if interface:
         print("Using control interface with ip "+conn_ctrl.ip+" at port " + str(conn_ctrl.port) +".")
         if host:
             if (ctrl!=""):
-                print("Start "+ctrl[0]+" "+ctrl[1]);
-                process=subprocess.Popen(ctrl);            
-                ctrl="";
+                if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
+                    print("Start "+ctrl)
+                    process=subprocess.Popen(ctrl)
+                    ctrl="";
+                else:
+                    print("Start "+ctrlcmd+" "+ctrl)
+                    process=subprocess.Popen([ctrlcmd,ctrl])
+                    ctrl="";
             conn_ctrl.openH();
         else:
             conn_ctrl.openC();
     
-    print("Start solver")
+    print("\nRunning the simulation...")
     t_start=time.time();
 
     # Start the ODE-solver
@@ -334,9 +351,9 @@ if __name__=="__main__":
         
     #Few examples how to run different tests:
     t=np.linspace(0,10,100);
-    #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=False);
-    #reg_wave(4,3.5,"test.csv","python3 Controller1.py");
-    reg_wave(4,3.5,"test.csv","linear")
+    start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
+    #reg_wave(4,3.5,"test.csv","Controller1.py");
+    #reg_wave(4,3.5,"test.csv","linear")
     #decay_test(0.15,"decay1.csv",10,"linear")
     #reg_wave(1,4,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
