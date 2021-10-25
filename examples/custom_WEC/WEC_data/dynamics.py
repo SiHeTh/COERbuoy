@@ -53,8 +53,8 @@ class WEC():
             self.damping =data.get("PTO_damping",100000); #("parameter_name",standard_value)
     
     #Get linearised mass, damping and spring coefficent (only for calculation of eigenperiod)    
-    #Includes only non-hydrodnymaic parameters
-    def pto_mdc (self):
+    #Includes only non-hydrodynamic parameters
+    def pto_mdc (self,z):
         m=(self.mass);
         d=0;
         c=0;
