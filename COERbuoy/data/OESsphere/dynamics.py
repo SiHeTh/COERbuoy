@@ -44,7 +44,7 @@ class WEC():
     def Calc_fs_spring(self,x1,x2):
       return 0;
             
-    def pto_mdc (self):
+    def pto_mdc (self,z):
         m=0;
         d=0;
         c=0;

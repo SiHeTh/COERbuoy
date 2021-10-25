@@ -57,7 +57,7 @@ class WEC():
     omega_cut_off=3.2; #highest frequency used for calculation    
     
     states=10;
-    file=os.path.join(utils.wec_dir,"floater.txt");#floaterfile;#Path(__file__).parent()/"floater.txt";
+    file=os.path.join(os.path.dirname(__file__),"floater.txt");#floaterfile;#Path(__file__).parent()/"floater.txt";
     acc=0;
     force_sensor=0;
     
@@ -121,10 +121,11 @@ class WEC():
             self.heave_only=1-self.heave_only;
             
     #Get linearised mass, damping and spring coefficent        
-    def pto_mdc (self):
+    def pto_mdc (self, z):
+        delta=0.1;
         m=(self.mass*self.mb);
         d=self.d_add#;+self.Calc_drag(0,1);
-        c=-self.c_fs/self.l_fs;
+        c=-1*(self.Calc_fs_spring(z,0)-self.Calc_fs_spring(z-delta,0))*1/delta;
         return [m,d,c];
     
     #negative spring force + pre-tension
@@ -251,8 +252,8 @@ class WEC():
       
       f_hy = self.buoy.get_forces(t,wave,[-1*cx[0],cx[1],alpha],[-1*cv[0],cv[1],0],self.acc)
 
-      f_hy[0][0]=-1*f_hy[0][0]+Fdrags*0;
-      f_hy[0][1]=f_hy[0][1]+Fdrag*0-self.mb*g*self.mass;
+      f_hy[0][0]=-1*f_hy[0][0]+Fdrags;
+      f_hy[0][1]=f_hy[0][1]+Fdrag-self.mb*g*self.mass;
       F_radax = np.matmul(m_rot,f_hy[0][:2]);
       #print([f_hy[0][0],F_radax[0]])
       
@@ -274,7 +275,7 @@ class WEC():
       mass_sum_floater=(self.mass*self.mb+np.real(am[1]));
       
           
-      F_sum_floater=F_radax[1]+F_gen*0+WS+Fd_add*0+brake;
+      F_sum_floater=F_radax[1]+F_gen+WS+Fd_add*0+brake;
       #print([f_hy])#,F_gen,WS,Fd_add,x[1],r1,x[0],F_sum_floater])
       F_sum_floater=np.sum(np.real(F_sum_floater));
       self.force_sensor=F_sum_floater;
@@ -304,7 +305,7 @@ class WEC():
       #dx[3]=f_hy[0][0];
       dx[2]=x[3];
               
-      print([F_radax,cx,x[0],x[2],dx[3]])
+      #print([F_radax,cx,x[0],x[2],dx[3]])
       
       if (x[0])>4 and dx[0]>0:
           dx[0]=0;
@@ -317,8 +318,8 @@ class WEC():
               dx[1]=0;
           
           
-      dx[3]=dx[3]#*self.heave_only;
-      dx[2]=dx[2]#*self.heave_only;
+      dx[3]=dx[3]*self.heave_only;
+      dx[2]=dx[2]*self.heave_only;
       dx[5]=0;
       dx[4]=0;
       dx[7]=0;

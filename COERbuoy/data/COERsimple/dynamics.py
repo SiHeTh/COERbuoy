@@ -93,7 +93,7 @@ class WEC():
             self.l=data.get("l_mooring",30);
             
     #Get linearised mass, damping and spring coefficent        
-    def pto_mdc (self):
+    def pto_mdc (self,z):
         m=(self.mass);
         d=self.d_add#;+self.Calc_drag(0,1);
         c=-self.c_fs;
@@ -203,7 +203,7 @@ class WEC():
       if (x[1]>=0):
           brake=-1*abs(brake);
       F_sum_floater=f_exc;
-      F_sum_floater=np.sum(np.real(F_sum_floater));
+      F_sum_floater=np.sum(np.real(F_sum_floater))+F_gen;
       self.force_sensor=F_sum_floater;
       #print([np.sum(np.real(f_exc)),brake])
       dx=np.zeros(10);
