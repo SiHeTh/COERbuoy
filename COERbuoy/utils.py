@@ -34,13 +34,13 @@ def get():
     def read_settings(fp): #read settings from file
         with open(fp) as file:
             data=json.load(file);
-            print(data)
+            #print(data)
             global class_hydro, wec_dir, conn_ip, conn_port, resolution, dt_controller, msg_status, user_dir;
             class_hydro=data.get("hydro",class_hydro);
             wec_dir=data.get("WECfolder",wec_dir);
             conn_ip=data.get("conn_ip",conn_ip);
             conn_port=data.get("conn_port",conn_port);
-            user_dir=data.get("ctrl_path",user_dir);
+            user_dir=data.get("user_dir",user_dir);
             resolution=data.get("resolution",resolution);
             dt_controller=data.get("dt_controller",dt_controller);
             msg_status=data.get("status_message",msg_status);

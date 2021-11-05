@@ -1,4 +1,5 @@
 from .simulation import start_simu, reg_wave, bretschneider_wave, decay_test
+import COERbuoy.GUI as GUIServer
 import argparse
 from argparse import RawTextHelpFormatter as tf;
 
@@ -19,16 +20,19 @@ parser.add_argument("--bretschneider_wave", nargs=4,metavar=('Hs','Te','filename
                     "ctr = control command.\n"
                     "Example:\n--bretschneider_wave 1 6 output.csv linear "
                     )
-                    
+parser.add_argument("--GUI", action='store_true',
+                    help="Start web server for GUI."
+                    )
 #args=parser.parse_args(["--regular_wave","3","3","lin","lin"])
 args=parser.parse_args()
-print(args)
 if args.regular_wave != None:
     a=args.regular_wave;
     reg_wave(float(a[0]),float(a[1]),a[2],a[3])
 elif args.bretschneider_wave != None:
     a=args.bretschneider_wave;
     bretschneider_wave(float(a[0]),float(a[1]),a[2],a[3])
+elif args.GUI:
+    GUIServer.run()
 #elif:
 #print("Welcome to the COERbuoy1 model!\n")
 #print("Usage:")
