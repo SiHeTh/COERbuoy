@@ -1,0 +1,243 @@
+<html style="width:100%;height:100%;">
+<head>
+<meta charset="utf-8" />
+<title>
+Bouy controller visulaisation
+</title>
+<!--link rel="stylesheet" href="main.css"-->
+<!--script src=jquery/jquery-3.5.1.min.js></script-->
+<!script document.createElementNS('http://www.w3.org/2000/svg', 'svg');></script-->
+<script type="text/javascript">
+
+
+class Game{
+constructor(svg_area)
+{
+this.area=svg_area;
+this.buoyheight=200;
+this.buoywidth=200;
+
+this.line=document.createElementNS("http://www.w3.org/2000/svg",'polygon');
+this.line.setAttribute("fill","blue")
+
+this.buoy=document.createElementNS("http://www.w3.org/2000/svg",'svg');
+this.buoypoly=document.createElementNS("http://www.w3.org/2000/svg",'polygon');
+
+this.score=document.createElementNS("http://www.w3.org/2000/svg",'text');
+this.score.appendChild(document.createTextNode("Score: 0"))
+
+this.buoy.appendChild(this.buoypoly);
+this.area.appendChild(this.buoy);
+this.area.appendChild(this.line);
+this.area.appendChild(this.score);
+this.latch=false;
+this.resize();
+}
+set_buoy(cx,cy)
+{
+var minx=0;
+var miny=0;
+var maxx=0;
+var maxy=0;
+for (let i=0; i<cx.length; i++)
+{
+if (minx>cx[i]){minx=cx[i]};
+if (maxx<cx[i]){maxx=cx[i]};
+if (miny>cy[i]){miny=cy[i]};
+if (maxy<cy[i]){maxy=cy[i]};
+}
+
+this.buoyheight=maxy-miny;
+this.buoywidth=2*maxx;
+
+this.buoyheight=this.buoyheight*20;
+this.buoywidth=this.buoywidth*20;
+this.resize();
+
+
+for (let i=0; i<cx.length; i++){
+var point=this.buoy.createSVGPoint();
+point.x=cx[i]*20+this.buoywidth/2;
+point.y=cy[i]*20+this.buoyheight/2;
+this.buoypoly.points.appendItem(point);}
+
+for (let i=cx.length-1; i>=0; i--){
+var point=this.buoy.createSVGPoint();
+point.x=-cx[i]*20+this.buoywidth/2;
+point.y=cy[i]*20+this.buoyheight/2;
+this.buoypoly.points.appendItem(point);}
+
+
+}
+
+resize()
+{
+this.offsety=this.area.getBBox().height/2;
+this.offsetx=this.area.getBBox().width/2;
+this.width=this.area.getBBox().width;
+this.height=this.area.getBBox().height;
+
+
+//this.buoy.setAttribute("x",this.offsetx-this.buoywidth/2)
+//this.buoy.setAttribute("y",this.offsety-this.buoyheight/2)
+//this.buoy.setAttribute("height",40);
+//this.buoy.setAttribute("width",80);
+this.buoypoly.setAttribute("fill","yellow");
+this.buoypoly.setAttribute("stroke","purple");
+this.buoypoly.setAttribute("stroke-width",2);
+
+this.score.setAttribute("x",this.offsetx*4/3)
+this.score.setAttribute("y",this.offsety*0.2)
+this.score.setAttribute("font-size",this.width/40)
+
+
+console.log("resize")
+}
+draw(msg)
+{
+
+this.score.childNodes[0].nodeValue="Score: "+msg.score;
+
+this.xscale=this.area.getBBox().width/msg.wave.length;
+
+this.line.points.clear();
+this.buoy.setAttribute("x",this.offsetx-msg.x*20-this.buoywidth/2)
+this.buoy.setAttribute("y",this.offsety-msg.y*20-this.buoyheight/2)
+console.log(msg.x,msg.y)
+
+var point=this.area.createSVGPoint();
+point.x=0;
+point.y=this.height;
+this.line.points.appendItem(point);
+
+for (let i=0; i<msg.wave.length; i++){
+var point=this.area.createSVGPoint();
+point.x=i*this.xscale;
+point.y=-1*msg.wave[i]*20+this.offsety;
+this.line.points.appendItem(point);}
+
+var point=this.area.createSVGPoint();
+point.x=(msg.wave.length-1)*this.xscale;
+point.y=this.height;
+this.line.points.appendItem(point);
+
+}
+}
+
+  
+window.onload=function(){
+document.getElementById("setname").style.display = "none";
+
+
+document.getElementById("sendname").addEventListener('click', function(event) {
+//set name for highscre list
+ws.send(JSON.stringify({type:"name", name:document.getElementById("highscorename").value}));
+document.getElementById("setname").style.display = "none";
+
+
+});
+
+
+ws=new WebSocket("ws://localhost:8888/")
+var g =new Game(document.getElementById("svgwave"));
+ws.onopen=function(){
+console.log("Connection established");
+document.addEventListener('touchstart', function(event) {
+    g.latch=true;
+});
+document.addEventListener('touchend', function(event) {
+    g.latch=false;
+});
+document.addEventListener('keydown', function(event) {
+    if(event.keyCode == 32) {
+    g.latch=true;
+    }
+});
+document.addEventListener('keyup', function(event) {
+    if(event.keyCode == 32) {
+    g.latch=false;}
+});
+
+const resizeObserver = new ResizeObserver(entries => {
+  g.resize();
+  });
+   
+  resizeObserver.observe(document.getElementById("svgwave"));
+}
+
+ws.onmessage=function(evt){
+
+var msg=JSON.parse(evt.data);
+
+if (msg.type=="geo")
+{
+console.log("set buoy")
+g.set_buoy(msg.cx,msg.cy)    
+}
+
+if (msg.type=="highscore")
+{
+//new highscore list entry
+while (document.getElementById("scorelist").hasChildNodes())
+{document.getElementById("scorelist").removeChild(document.getElementById("scorelist").firstChild)}
+for (let i=0; i<msg.names.length; i++)
+{
+r=document.createElement('tr');
+c1=document.createElement('th');
+c2=document.createElement('th');
+c3=document.createElement('th');
+c1.innerHTML=i;
+c2.innerHTML=msg.names[i];
+c3.innerHTML=msg.scores[i];
+if (i == msg.position)
+{
+c2.innerHTML="";
+var input1=document.createElement('input');
+input1.setAttribute("id","highscorename")
+c2.appendChild(input1);
+}
+r.appendChild(c1);
+r.appendChild(c2);
+r.appendChild(c3);
+document.getElementById("scorelist").appendChild(r)
+}
+
+document.getElementById("setname").style.display = "block";
+input1.focus();
+
+}
+
+if (msg.type=="status")
+{
+console.log(g.latch)
+ws.send(JSON.stringify({type:"brake", brake: g.latch}));
+
+g.draw(msg);
+let waveline=document.getElementById("wave");
+}
+
+}
+}
+
+</script>
+
+</head>
+<body style="width:100%;height:100%;overflow:hidden";>
+
+<div id="setname" style="z-index:1;display:block;position:absolute;left:30%;top:10%;vertical-align:middle;background-color:rgb(200,200,200)">
+<div id="setname1">
+<h2>Highscore list</h2>
+<table id="scorelist">
+</table>
+You got in the highscore list! Please enter your name:
+<button id="sendname">OK</button>
+</div>
+</div>
+
+
+<svg id="svgwave" height="100%" width="100%">
+<image href="back.svg" x="0" y="0" width="100%"/>
+</svg>
+
+</body>
+</html>

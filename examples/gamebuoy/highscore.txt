@@ -1,0 +1,1 @@
+{"names": ["Hasana", "Heiko", "bug fixed", "Simon", "heiko", "Simon", "Sandra", "test", "Simon", "The labmaster"], "scores": [41645, 38615, 38443, 37708, 33662, 32013, 30235, 23214, 18247, 6937]}
