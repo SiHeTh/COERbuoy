@@ -150,6 +150,9 @@ def run():
     folder0=utils.pkg_dir+"/param/";
     mod_name={0:"surge/",1:"heave/",2:"pitch/"}
     folder=folder0;
+    for mode in [0,1,2]:
+        folder=folder0+mod_name[mode];
+        os.makedirs(folder,exist_ok=True);
     pandas.DataFrame(np.vstack((zs,area,vol)).transpose(),columns=["z-offset","cross-sec.area","volume"]).round(2).to_csv(folder+"HydroParam1.csv",index=False)
     pandas.DataFrame(np.vstack((zs,Fstat[1],floater_slider_spring,Fstat[1]+floater_slider_spring)).transpose(),columns=["z-offset","c_hydrostatic","c_spring","resulting"]).round(2).to_csv(folder+"Stiffness.csv",index=False)
         

@@ -2,5 +2,8 @@ graft COERbuoy/data
 graft COERbuoy/web
 graft COERbuoy/results
 graft COERbuoy/param
+graft COERbuoy/param/heave
+graft COERbuoy/param/surge
+graft COERbuoy/param/pitch
 graft COERbuoy/div
 include COERbuoy/settings.txt
