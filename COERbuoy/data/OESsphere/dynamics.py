@@ -18,7 +18,7 @@ import os;
 g=9.81;
 rho=1000;
 class WEC():
-    omega_cut_off=20;
+    omega_cut_off=12;
     states=10;
     am_old=0;
     amlow_old=0;
@@ -35,7 +35,7 @@ class WEC():
         
     def load_buoy(self,floater_class,xi,depth,cog):
         self.buoy=floater_class(xi,g,depth,cog,self.file);
-        self.mass=self.buoy.Volume(0)*1000;
+        self.mass=self.buoy.Volume(0)*1025;
         #self.mass=self.buoy.Volume(0)*1000;
     
     def load_param(self):
@@ -52,7 +52,7 @@ class WEC():
     
     def Calc_drag(self,x,dx):
         #print([x,dx,self.buoy.max_radius(-x)**2*3.14,-0.5*self.cD*rho*dx*np.abs(dx)*self.buoy.max_radius(-x)**2*3.14])
-        return -0.5*self.cD*rho*dx*np.abs(dx)*self.buoy.max_radius(-x)**2*3.14;
+        return -0.3*self.cD*rho*dx*np.abs(dx)*self.buoy.max_radius(-x)**2*3.14;
     def get_translator_speed(self,x):
         return x[1]-x[7];
     def get_translator_position(self,x):
@@ -82,8 +82,9 @@ class WEC():
       
       F_h=f_hy[0];
       m0=f_hy[1];
+      m0[1]=m0[1];
      # print(heave,f_hy[0])
-      Fdrag=0#self.Calc_drag(x[0],x[1]);
+      Fdrag=self.Calc_drag(x[0],x[1]);
       
       #set added mass by hand (because NEMOH results are weired)
       def get_am(heave,wave,t):
@@ -98,7 +99,7 @@ class WEC():
               m1=np.min([(d-0.8)+0.57,1]);
           return [0,m1*0.15**3*2/3*3.14*1000,0];
         
-      m0=get_am(heave,wave,t)
+      #m0=get_am(heave,wave,t)
       dx=np.zeros(10);
       #m0[1]=self.buoy.Volume(heave*-1)*1000*0.5;
       #print(t,heave,m0[1])
@@ -109,10 +110,12 @@ class WEC():
           if False:#x[1]>0:
               dP=0#0.5*(np.imag(param[2][1][0])-self.amlow_old)/(t-self.t_old)*x[1];
           else:
-              #self.am_old=self.buoy.get_forces(t,wave,[0,heave+x[1]*0.01,alpha],[0,x[1],0],self.acc)[1];
-              self.am_old=get_am(heave+x[1]*0.01,wave,t)
+              #print(m0[1],get_am(heave,wave,t))
+              self.am_old=self.buoy.get_forces(t,wave,[0,heave+x[1]*0.01,alpha],[0,x[1],0],self.acc)[1];
+              #self.am_old=get_am(heave+x[1]*0.01,wave,t)
               #added_mass
-              dP=-0.5*(m0[1]-self.am_old[1])/(0.01)*x[1];
+              self.am_old[1]=self.am_old[1];
+              dP=(m0[1]-self.am_old[1])/(0.01)*x[1];
               
               
               #dP=-1*(m0[1]-self.am_old[1])/(t-self.t_old)*x[1];

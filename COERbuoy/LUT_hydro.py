@@ -69,7 +69,7 @@ def load_LUT(omegatest, bem_dir):
                 #print("Reading data for heave h and pitch p");
                 
                 #Excitation force
-                b=np.array(pandas.read_csv(entry.path+"/results/ExcitationForce.tec",header=4,delimiter="\s+"));
+                b=np.array(pandas.read_csv(entry.path+"/results/ExcitationForce.tec",skiprows=5,header=None,delim_whitespace=True))#np.array(pandas.read_csv(entry.path+"/results/ExcitationForce.tec",header=4,delimiter="\s+"));
                 omega=b[:,0];
                 fe_a=np.array([[0.0]*len(omegatest)]*3).copy();
                 fe_p=np.array([[0.0]*len(omegatest)]*3).copy();
@@ -90,7 +90,8 @@ def load_LUT(omegatest, bem_dir):
                 for i in np.arange(3):
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),delimiter="\s+"));
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),delimiter="\s+"));
-                    b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+",engine="python"));
+                    b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",skiprows=5+(1+len(omega))*i,nrows=len(omega),header=None,delim_whitespace=True))#,sep="\s+|,+",engine="python"));
+                    #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",nrows=len(omega),header=4+(1+len(omega))*i,sep="\s+|,+",engine="python"));
                     if np.isnan(b[0,0]):
                         b=b[:,1:];
                     fr_m[0][i]=interpolate(omega,b[:,1].copy(),o)
@@ -99,12 +100,12 @@ def load_LUT(omegatest, bem_dir):
                     fr_r[1][i]=interpolate(omega,b[:,4].copy(),o)
                     fr_m[2][i]=interpolate(omega,b[:,5].copy(),o)
                     fr_r[2][i]=interpolate(omega,b[:,6].copy(),o)
+                    fr_inf[i]=b[-1,i*2+1];
                 
-                
-                b=np.array(pandas.read_csv(entry.path+"/results/IRF.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+",engine="python"));
-                for i in np.arange(3):
-                    #fr_inf[i]=b[1,1+i*2];#Not working wth current data
-                    fr_inf[i]=fr_m[i][i][-1];
+                #b=np.array(pandas.read_csv(entry.path+"/results/IRF.tec",header=4+(1+len(omega))*i,nrows=len(omega),sep="\s+|,+",engine="python"));
+                #for i in np.arange(3):
+                #    #fr_inf[i]=b[1,1+i*2];#Not working wth current data
+                #    fr_inf[i]=fr_m[i][i][-1];
                 LUT[str((int)(h))+"_"+str((int)(p))]=[fe_a,fe_p,fr_m,fr_r, fr_inf]            
     print("LUT table h spacing: "+str(h_min)+ ": "+str(h_step)+" : "+str(h_max));
     print("LUT table p spacing: "+str(p_min)+ ": "+str(p_step)+" : "+str(p_max)+"\n");
@@ -150,7 +151,7 @@ def get_fromLUT(h,p):
 
 if __name__=="__main__":
         
-    load_LUT(np.array([0.1,0.2,0.3,0.4]));
+    load_LUT(np.array([0.1,0.2,0.3,0.4]),"data/COERbuoy1/BEM/");
     print("Result 1:");
     print(get_fromLUT(h_max/2, p_min/2));
     print("Result 2:");

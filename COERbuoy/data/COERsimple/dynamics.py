@@ -96,7 +96,7 @@ class WEC():
     def pto_mdc (self,z):
         m=(self.mass);
         d=self.d_add#;+self.Calc_drag(0,1);
-        c=-self.c_fs;
+        c=0#-self.c_fs;
         return [m,d,c];
     
     #negative spring force + pre-tension
@@ -173,8 +173,8 @@ class WEC():
       alpha=x[2];
       stroke=x[0];
       
-      if PTO_force>0.1:
-          PTO_force=PTO_force+1;
+      #if PTO_force>0.1:
+      #    PTO_force=PTO_force+1;
             
       heave=x[0];
       surge=self.get_surge(x);
@@ -198,7 +198,7 @@ class WEC():
           
       #Calculate all inertia (physical mass+added mass)
       mah=np.real(f_hy[1][1])
-      mass_sum_floater=(self.mass+np.real(mah*0));
+      mass_sum_floater=(self.mass+np.real(mah));
       #print(heave,f_exc)
       if (x[1]>=0):
           brake=-1*abs(brake);
@@ -244,7 +244,7 @@ class WEC():
 
 #Testing  
 if __name__=="__main__":
-    #Testing if any function throughs an error
+    #Testing if any function throws an error
     omega=np.round(np.linspace(0.1,1.5*2+0.1,32),10);
     xi=omega*omega/9.81;
     w=WEC();

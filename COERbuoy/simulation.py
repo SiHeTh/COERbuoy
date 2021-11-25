@@ -41,6 +41,7 @@ def start_simu (**kwargs):
     from scipy.integrate import solve_ivp
     
     
+    damping=0;
     pi=np.pi;
     dt=utils.resolution;
     process=0;
@@ -75,12 +76,17 @@ def start_simu (**kwargs):
     # Define control mode and eventually start control
     # "TCP": A TCP/IP connection is opened, the controller is started manually
     # "linear": A constant velocity damping is applied; The external control interface is not used; Implemented for debugging/testing
+    # "none": No control/damping is applied
     # [string]: String specifying control command (f.ex.: "python3 MBC.py"), a TCP/IP socket is opened and the control program started as a subprocess
     if "control" in kwargs:
         if kwargs["control"]=="TCP":
             interface=True;
         elif kwargs["control"]=="linear":
             interface=False;
+            damping=0;
+        elif kwargs["control"]=="none":
+            interface=False;
+            damping=0;
         elif kwargs["control"]!="":
             ctrl0=kwargs["control"].split(" ");
             print(host)
@@ -153,6 +159,9 @@ def start_simu (**kwargs):
     # WEC reads in its parameters
     wec.load_param();
     
+    if kwargs["control"]=="linear":
+        damping=wec.damping;
+            
     class history():
         def __init__(self,x):
             self.t=[0];
@@ -192,8 +201,8 @@ def start_simu (**kwargs):
       # While the ODE solver can jump forth and back in time; the control is only executed
       # the first time a specific time is passed
       # This is not _exact_, but a good compramise between computational complexity and accuracy
-      if t-dynamics.tcontrol>utils.dt_controller or t-dynamics.tcontrol<0:
-          
+      if t-dynamics.tcontrol>=utils.dt_controller-0.05*utils.dt_controller or t-dynamics.tcontrol<0:
+          #print(t-dynamics.tcontrol)
           tw=100;
           tw1=tw-1;
           tseq=np.linspace(t-tw1/4,t,int(tw));
@@ -229,7 +238,7 @@ def start_simu (**kwargs):
               # if the TCP/IP control interface is not used, apply a velocity dependent damping
               # (for testing)
               dynamics.PTOt=[t]
-              dynamics.PTO=[-wec.get_translator_speed(x)*wec.damping];
+              dynamics.PTO=[-wec.get_translator_speed(x)*dynamics.damping];
               dynamics.brake=[0];
       print(str(np.round(100*t/dynamics.duration,0))+"% completed", end="\r");
       i=np.abs(np.array(dynamics.PTOt)-t).argmin();
@@ -237,11 +246,13 @@ def start_simu (**kwargs):
       out=wec.Calc(t,wave1,x,dynamics.PTO[i],dynamics.brake[i],dynamics.ulast);
       dynamics.ulast=wec.get_translator_speed(x);
       return out;    
+
     dynamics.ts=np.linspace(0,t[-1]+4,int((t[-1]+4)*wec.buoy.omega[-1]*2));
     dynamics.ulast=0;
     dynamics.latch_counter=0;
     dynamics.tcontrol=0;
     dynamics.PTO=[0];
+    dynamics.damping=damping;
     dynamics.PTOt=[0];
     dynamics.brake=[0];
     dynamics.duration=t[-1];
@@ -267,13 +278,18 @@ def start_simu (**kwargs):
     t_start=time.time();
 
     # Start the ODE-solver
-    sol = solve_ivp(dynamics,[0,t[-1]],init_condition,t_eval=steps.tolist(),max_step=0.5*1/(wec.buoy.omega[-1]*2),rtol=0.8,atol=0.8)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
+    sol = solve_ivp(dynamics,[0,t[-1]],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=1,atol=1)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
     print("Elapsed time :"+str(time.time()-t_start)+"\n");
 
     # Write the solution of the data frame
     pandas.DataFrame(np.array([sol.t[:],np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
     s=np.argmax(sol.t>teval)
-
+    
+    #import matplotlib.pyplot as plt
+    #plt.figure();
+    #plt.plot(sol.t[:],np.transpose([np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:]]));
+    #plt.show();
+    
     # free data from the wave and the WEC
     wave1.clear();
     del wave1;
@@ -296,9 +312,12 @@ def start_simu (**kwargs):
 
 # Decay test (Init state, name, duration, control)
 def decay_test(x0, n, t, ctrl):
-    t2=np.arange(0,t,1/(omega_cut_off))
+    t2=np.arange(0,t,1/(omega_cut_off*np.pi))
     y=0*t2;
+    if isinstance(x0,list):
+        return start_simu(time=t2,wave=y,name=n, t0=0, init=x0, control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*A**2*p)    
     return start_simu(time=t2,wave=y,name=n, t0=0, init=[x0, 0, 0], control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*A**2*p)
+
 
 # Regular wave (Height, period, name, control)
 def reg_wave(H,p,n,ctrl):
@@ -307,9 +326,11 @@ def reg_wave(H,p,n,ctrl):
     p=float(p);
     t0=np.max([p*2,0]);#4
     if (p<6):
-        t0=p*4;
-    t2=np.max([t0+p*3,0]);#6
-    t=np.arange(0,t2,1/(omega_cut_off))
+        t0=p*8;
+    t2=np.max([t0+p*3*3,0]);#6
+    if (t2<20):
+        t2=30*p;
+    t=np.arange(0,t2,1/(omega_cut_off*np.pi))
     y=H/2*np.sin(2*np.pi/p*t)
     return start_simu(time=t,wave=y,name=n, t0=t0, control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*H**2*p)
 
@@ -324,7 +345,7 @@ def bretschneider_wave(Hs,p,n,ctrl):
     S=5/16*(omega_m**4)/(omega**5)*(Hs**2)*np.exp(-5*(omega_m**4)/4/(omega**4))
     t0=np.max([p*3,120]);
     t2=np.max([t0+p*6]);
-    t=np.arange(0,t2,1/(omega_cut_off/np.pi))
+    t=np.arange(0,t2,1/(omega_cut_off*np.pi))
     np.random.seed(6)#Maybe replace by fixed phase vector; has to guaranteed that rnadom sequecne is always the same
     phase=np.random.rand(omega.size)*2*np.pi;
     y=np.sum(np.sqrt(2*S*(omega[1]-omega[0]))*np.sin(omega*t.reshape(t.size,1)+phase),1)
@@ -351,11 +372,11 @@ if __name__=="__main__":
         
     #Few examples how to run different tests:
     t=np.linspace(0,10,100);
-    start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
+    #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
     #reg_wave(4,3.5,"test.csv","Controller1.py");
-    #reg_wave(4,3.5,"test.csv","linear")
-    #decay_test(0.15,"decay1.csv",10,"linear")
+    reg_wave(1,12,"test.csv","controller_reactive.py")
+    #decay_test(0.15,"decay1.csv",20,"linear")
     #reg_wave(1,4,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
-       
+   

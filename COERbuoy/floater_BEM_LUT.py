@@ -78,32 +78,15 @@ class Floater_BEM(Floater):
         exc1 = np.array(res[1]);#Exitation force
         am_omega = np.real(res[2]);#added mass over omega
         am1 = np.array(res[3]);#added mass @ inf
-        #am1=[0,Floater.added_mass(self,z0),0];
-        
-        if not self.rad_set:
-            self.rad_old=am_omega;
-            self.p_old=p;
-            self.rad_set=True;
-            self.t_old=0.1;
             
         am_omom=am_omega#*self.omega;
-        #print(am_omom[1][1])
-        #am_omom[0][0]=am_omom[0][0]-am_omom[0][0][-1];
-        #am_omom[0][1]=am_omom[0][1]-am_omom[0][1][-1];
-        #am_omom[1][0]=am_omom[1][0]-am_omom[1][0][-1];
-        #am_omom[1][1]=am_omom[1][1]-am_omom[1][1][-1];
         #Generate wave from movement
         if (np.sum(np.abs(exc1))>0):
+            dx=v[1]*0.01;
+            res2=self.Calculate(z0, x0+dx, 0*delta0, eta);
             r1=am_omom[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+am_omom[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
             r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]+Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
             
-            
-            ##
-            #r3=r1-0*((-self.rad_old[1][1]+am_omega[1][1])/np.conjugate(exc1[1])*(p[1]-self.p_old[1])+(-self.rad_old[0][1]+am_omega[0][1])/np.conjugate(exc1[1])*(p[0]-self.p_old[0]));
-            #r4=r2-0*((-self.rad_old[1][0]+am_omega[1][0])/np.conjugate(exc1[0])*(p[1]-self.p_old[1])+(-self.rad_old[0][0]+am_omega[0][0])/np.conjugate(exc1[0])*(p[0]-self.p_old[0]));
-            
-            #r1=r3;
-            #r2=r4;
             
             wave.add_diracWave(-2/np.pi*r1,t,True);
             wave.add_diracWave2(-2/np.pi*r2,t,True);

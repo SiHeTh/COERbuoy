@@ -29,7 +29,7 @@ class parameters():
         if wecdir==None or classhydro==None:
             utils.get();
         if wecdir==None:
-            wecdir=utils.wec_dir;
+            wecdir=utils.wec_dir0;
         if classhydro==None:
             classhydro=utils.class_hydro;
         spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.WECpath(wecdir),"dynamics.py"));
@@ -41,8 +41,8 @@ class parameters():
     
     def init_hydro(self,omega):
         g=9.81;
-        self.omega=omega;
-        xi=omega*omega/g;
+        self.omega=np.array(omega);
+        xi=self.omega*self.omega/g;
         #Initialize WEC
         self.wec.load_buoy(getattr(Floater,utils.class_hydro),xi,300,0);
         self.wec.load_param();
@@ -63,6 +63,14 @@ class parameters():
     
     def pto_mdc (self,z):
         return self.wec.pto_mdc(z);
+    
+    
+    def mdc (self,z):
+        mdc=self.wec.pto_mdc(z);
+        mdc[0]=mdc[0]+np.imag(self.hydro(0,1,1)[2]);
+        mdc[1]=mdc[1]-np.real(self.hydro(0,1,1)[2]);
+        mdc[2]=np.zeros(len(mdc[0]))+mdc[2]+self.floater.Area(z)*1000*9.81;
+        return mdc;
     
     def eff_generator(self,v,f):
             wave=wavefield.wavefield(self.omega*0,self.omega*0,self.omega);
@@ -107,7 +115,7 @@ def run():
     Am8=np.copy([np.zeros([zs.size])]*n_mode);
     floater_slider_spring=np.zeros(zs.size);
     #Madd-Damper-Spring parameters
-    mdc=np.array([0,0,0]);
+    mdc=np.array([0,[],0]);
     
     #mode=1;#0-surge, 1-heave, 2-pitch
     
@@ -131,8 +139,9 @@ def run():
         
         #Get linear parameter only at zero position
         if z==0:
-            mdc[1]=Frad[1][idx][0];
-            mdc[2]=Fstat[1][idx]#-floater_slider_spring[idx]);
+            mdc[0]=Am8[1][idx];
+            mdc[1]=Frad[1][idx];
+            mdc[2]=Fstat[1][idx];#-floater_slider_spring[idx]);
     
     print("calculation finished")
     omega2=[];
@@ -179,12 +188,12 @@ def run():
         axis2.append("velocity="+str(s.round(2))+"m/s");
     pandas.DataFrame(np.vstack(((power_s/1000).round(2),eff.round(2).transpose())).transpose(),columns=["Generator_efficency_over_Power[kW]"]+axis2).to_csv(folder0+"gen_eff.csv",index=False)
     
-    mdc=mdc+wec.pto_mdc(0);#Get lienarized data from WEC
+    mdc=mdc+wec.pto_mdc(0);#Get linearized data from WEC
 
     #... now the linearized eigenfrequencys can be calculated
-    deigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0]-(0.5*mdc[1]/mdc[0])**2)
     eigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0])
-    pandas.DataFrame(np.vstack((mdc[0],mdc[1],mdc[2],eigfreq,deigfreq,wec.floater.Calc_CoG())).transpose(),columns=["mass[kg]","damping [Ns/m]","stiffness [N/m]","eigenperiod [s]","damped eigenperiod [s]","center of gravity (heave) [m]"]).round(2).to_csv(folder0+"info.csv",index=False)
+    deigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0]-(0.5*mdc[1][np.where(np.array(omega)<=eigfreq)[0][0]]/mdc[0])**2)
+    pandas.DataFrame(np.vstack((mdc[0],mdc[1][0],mdc[2],eigfreq,deigfreq,wec.floater.Calc_CoG())).transpose(),columns=["mass[kg]","damping [Ns/m]","stiffness [N/m]","eigenperiod [s]","damped eigenperiod [s]","center of gravity (heave) [m]"]).round(2).to_csv(folder0+"info.csv",index=False)
 
     ##clearning up
     #wec.release();

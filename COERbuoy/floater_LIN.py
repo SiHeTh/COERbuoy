@@ -31,7 +31,6 @@ class Floater_LIN(Floater_BEM):
         exc1 = np.array(res[1]);#Exitation force
         am_omega = np.real(res[2]);#added mass over omega
         am1 = np.array(res[3]);#added mass @ inf
-        am1=[0,Floater.added_mass(self,0),0];
         
         am_omom=am_omega#*self.omega;
         #am_omom[0][0]=am_omom[0][0]-am_omom[0][0][-1];

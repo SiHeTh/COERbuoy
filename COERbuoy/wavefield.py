@@ -70,6 +70,8 @@ class wavefield:
       #Window the wave to avoid hard cuts, leading to high frequencies after FFT
       win = planck_window(len(y)+1,0.14)[0:len(y)]
       
+      if abs(y[0]-y[-1])<0.2:#no windowing if signal is periodic
+          win=1;
       # FFT
       Y=(np.fft.fft(y*win))/y.size;
       omega=np.array(range(0,int(Y.size/2)-1))+1;

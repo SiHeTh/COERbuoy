@@ -8,7 +8,12 @@ Created on Fri Aug 28 08:55:59 2020
 
 import numpy as np;
 import json;
+from scipy.integrate import dblquad as int2d;
+from scipy.special import jv as bessel;
+from scipy.signal import hilbert as KramerKronig;
+from scipy.optimize import fsolve;
 #from scipy.fftpack import hilbert as KramerKronig;
+from scipy.interpolate import interp1d;
 
 pi=np.pi;
 #wave=wavefield.wavefield(np.zeros(20),np.linspace(1,20),2)
@@ -42,6 +47,7 @@ class Cone:
       self.delta0=0;
       self.depth=h;
   
+
   def Calculate(self, z0, x0, delta0, eta):
       return self.Calculate_xi(z0, x0, delta0, eta, self.xi)
   def Calculate_xi(self, z0, x0, delta0, eta, xi0):
@@ -64,46 +70,24 @@ class Cone:
          return [empty,empty2];
       
       
-      #Using wheeler strechting to make linear wave theory less linear ;-)
-      xis=np.array(xi0*self.depth/(eta+self.depth))#xi dived by water depth (h) and position over the surface eta.
-      
       
       #buoyancy force (only heave)
       F_st_h=-self.g*self.rho*(2*pi*self.m*(((self.m*np.power(z2,3)/3+q*np.power(z2,2)/2))-(self.m*np.power(z1,3)/3+q*np.power(z1,2)/2)))
       F_st=[0,F_st_h,0]
       
-      #dynamic Froude-Krylov force
-      #surge
-      c_dy_s=np.array(xis);
-      #TODO: implement pitch
-      c_dy_p=np.array(xis);
-      c_dy_h=np.array(xis);
-      c_dy_h=np.array(xis);
+
       
-      if (len(xi0)>1):
-          #Avoid numerical errors
-          i=np.argmax(np.diff(np.abs(c_dy_h))>0)
-          if i>0:
-              c_dy_h[i:]=0;
-          i=np.argmax(c_dy_h<0)
-          if i>0:
-              c_dy_h[i:]=0;
-              
-      c_dy=[c_dy_s.copy(),c_dy_h.copy(),c_dy_p.copy()*0]
-          
-      
-      #print(F_st)
-      #print(c_dy)
-      return np.array([F_st,F_st]);
+      return np.array([F_st,0]);
   
   def Radius(self,z0):
-      if(z0>self.z1) and (z0<=self.z2):      
+      if(z0>=self.z1) and (z0<=self.z2):      
           r=-self.q+(z0)*self.m;
           return r;
       else:
           return 0;
       
   def max_Radius(self,z0):
+      #get maximum radius for this section if the lowest part of this section is below z0
       if (z0>self.z2):
           return np.max([-self.q+(self.z1)*self.m,-self.q+(self.z2)*self.m]);
       if(z0>=self.z1) and (z0<=self.z2):      
@@ -111,6 +95,7 @@ class Cone:
           return r;
       else:
           return 0;
+      
  
   def Area (self, z0):
       #get the area at z0
@@ -150,8 +135,8 @@ class Floater:
         self.elements=[];
         self.d=depth;
         self.CoG=CoG;
-        #self.file = open(idname+"_f.csv", "w")
-        #self.file.write("time,wave,buoyancy,FK,rad\r\n");
+        self.file = open(idname+"_f.csv", "w")
+        self.file.write("time,wave,buoyancy,FK,rad\r\n");
         if len(args)>0:
             with open(args[0]) as file:
                 geo=json.load(file);
@@ -159,7 +144,6 @@ class Floater:
                     if g["type"] == "cone":
                         self.addCone(g["coord"][0],g["coord"][1],g["coord"][2],g["coord"][3])
                         
-                
                 
         
     def addCone(self, z1, r1, z2, r2):
@@ -186,20 +170,25 @@ class Floater:
     def Calculate(self, z0, x0, delta0, eta):
         forces=np.array([[0,0,0],[0,0,0]]);
         
-        return [forces[0],0,0,0];
+        for e in self.elements:
+            forces = forces + e.Calculate(z0, x0, delta0, eta);
+        if np.sum(np.abs(forces[0]))==0:
+            return [forces[0],0,0,0]
+      
+        return [forces[0],0,[0,0,0],0];
     
-    def get_forces(self, t, wave, p, v, a):
-        
-        #self.file.write(str(t)+","+str(eta)+","+str(Fb)+","+str(FK)+","+str(Frad)+"\r\n");
-        return [0,0];
+    def get_forces(self, t, wave, z0, x0, delta0, v, a):
+        return;
         
     def get_force_lin(self, t, wave, z0, x0, delta0, v, a):
-        return 0;        
+        return;
         
     def Area(self, z0):
         area=0;
         for e in self.elements:
-            area = area + e.Area(z0);
+            area = e.Area(z0);
+            if area >0:
+                return area;
         return area;
     
     def AreaProjectedHeave(self, z0):
@@ -220,31 +209,47 @@ class Floater:
             area = area + e.AreaSurge(z0);
         return area;
     
-    def getGeoBox(self):
-        z_min=0;
-        z_max=0;
+    def getGeoBox(self,z0=np.NaN):
+        #gets the max and min heave position (z_min and z_max) and the maximal radius r_max and its vertical position z_r_max
+        z_min=np.NaN;
+        z_max=np.NaN;
         r_max=0;
         z_r_max=0;
+            
         for e in self.elements:
-            if  z_min>e.z1:
-                z_min=e.z1;
-            if  z_max<e.z2:
-                z_max=e.z2;
-            if e.Radius(e.z1)>r_max:
-                r_max=e.Radius(e.z1);
-                z_r_max=e.z1;
-            if e.Radius(e.z2)>r_max:
-                r_max=e.Radius(e.z2);
-                z_r_max=e.z2;
+            z1=e.z1;
+            z2=e.z2;
+            if (not np.isnan(z0)):
+                z1=np.min([z1,z0]);
+                z2=np.min([z2,z0]);
+                
+            if np.isnan(z_min):
+                z_min=z2;
+                z_max=z1;
+                
+            if  z_min>z1:
+                z_min=z1;
+            if  z_max<z2:
+                z_max=z2;
+            if e.Radius(z1)>r_max:
+                r_max=e.Radius(z1);
+                z_r_max=z1;
+            if e.Radius(z2)>r_max:
+                r_max=e.Radius(z2);
+                z_r_max=z2;
         return (z_min,z_max,z_r_max,r_max)
         
     
-    def added_mass(self, z0):
-        return 0;
         
-    
+ 
     def max_radius(self,z0):
+        #get maximal radius for the body below z0
         return np.max([e.max_Radius(z0) for e in self.elements]);
+    
+    
+    def radius(self,z0):
+        #get radius for the body at z0
+        return np.max([e.Radius(z0) for e in self.elements]);
     
     def Volume(self, z0):
         vol=0;
@@ -253,5 +258,5 @@ class Floater:
         return vol;
     
     def clear(self):
-        #self.file.close();
+        self.file.close();
         self.elements.clear();

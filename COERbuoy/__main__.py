@@ -9,7 +9,7 @@ parser.add_argument("--regular_wave", nargs=4,type=str, metavar=('H','p','filena
                     "H = wave height,\n"
                     "p = wave period,\n"
                     "filename = name of output file,\n"
-                    "ctr = control command.\n"
+                    "ctrl = control command.\n"
                     "Example:\n--regular_wave 1 6 output.csv linear "
                     )
 parser.add_argument("--bretschneider_wave", nargs=4,metavar=('Hs','Te','filename','ctrl'),
@@ -17,8 +17,16 @@ parser.add_argument("--bretschneider_wave", nargs=4,metavar=('Hs','Te','filename
                     "Hs = significant wave height\n"
                     "Te = energy period,\n"
                     "filename = name of output file,\n"
-                    "ctr = control command.\n"
+                    "ctrl = control command.\n"
                     "Example:\n--bretschneider_wave 1 6 output.csv linear "
+                    )
+parser.add_argument("--decay", nargs=4,metavar=('[x]','T','filename','ctrl'),
+                    help="Run a decay test.\nArguments:\n"
+                    "[x] = inital decay vector [z0,dz/dt0,x0,dx/dt0]\n"
+                    "T = time of test,\n"
+                    "filename = name of output file,\n"
+                    "ctrl = control command.\n"
+                    "Example:\n--decay '[1 0 1 0]' 20 'output.csv' 'linear' "
                     )
 parser.add_argument("--GUI", action='store_true',
                     help="Start web server for GUI."
@@ -31,6 +39,10 @@ if args.regular_wave != None:
 elif args.bretschneider_wave != None:
     a=args.bretschneider_wave;
     bretschneider_wave(float(a[0]),float(a[1]),a[2],a[3])
+elif args.decay != None:
+    a=args.decay;
+    x=list(map(float,a[0][1:-1].replace(","," ").replace("  "," ").split()));
+    decay_test(x,a[2],float(a[1]),a[3])
 elif args.GUI:
     GUIServer.run()
 #elif:
