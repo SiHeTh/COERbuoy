@@ -209,7 +209,9 @@ class GUIServer(BaseHTTPRequestHandler):
         elif p[0]=="/about.html":
             self.send_html_file("about.html");
         elif p[0]=="/doc.html":
-            self.send_html_file("params.html");                
+            self.send_html_file("params.html"); 
+        elif p[0][-5:]==".html":    
+            self.send_html_file(p[0][1:]);           
         else:
             self.send_html_file("start.html");
             
