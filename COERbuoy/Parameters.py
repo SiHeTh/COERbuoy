@@ -66,9 +66,9 @@ class parameters():
     
     
     def mdc (self,z):
-        mdc=self.wec.pto_mdc(z);
+        mdc=self.wec.pto_mdc(z); 
         mdc[0]=mdc[0]+np.imag(self.hydro(0,1,1)[2]);
-        mdc[1]=mdc[1]-np.real(self.hydro(0,1,1)[2]);
+        mdc[1]=mdc[1]+np.real(self.hydro(0,1,1)[2]);
         mdc[2]=np.zeros(len(mdc[0]))+mdc[2]+self.floater.Area(z)*1000*9.81;
         return mdc;
     
@@ -115,7 +115,7 @@ def run():
     Am8=np.copy([np.zeros([zs.size])]*n_mode);
     floater_slider_spring=np.zeros(zs.size);
     #Madd-Damper-Spring parameters
-    mdc=np.array([0,[],0]);
+    mdc=np.array([0,0,0]);
     
     #mode=1;#0-surge, 1-heave, 2-pitch
     
@@ -140,7 +140,7 @@ def run():
         #Get linear parameter only at zero position
         if z==0:
             mdc[0]=Am8[1][idx];
-            mdc[1]=Frad[1][idx];
+            mdc[1]=Frad[1][idx][0];
             mdc[2]=Fstat[1][idx];#-floater_slider_spring[idx]);
     
     print("calculation finished")
@@ -153,6 +153,7 @@ def run():
     for mode in [0,1,2]:
         folder=folder0+mod_name[mode];
         os.makedirs(folder,exist_ok=True);
+    folder=folder0;
     pandas.DataFrame(np.vstack((zs,area,vol)).transpose(),columns=["z-offset","cross-sec.area","volume"]).round(2).to_csv(folder+"HydroParam1.csv",index=False)
     pandas.DataFrame(np.vstack((zs,Fstat[1],floater_slider_spring,Fstat[1]+floater_slider_spring)).transpose(),columns=["z-offset","c_hydrostatic","c_spring","resulting"]).round(2).to_csv(folder+"Stiffness.csv",index=False)
         
@@ -193,10 +194,15 @@ def run():
     
     mdc=mdc+wec.pto_mdc(0);#Get linearized data from WEC
 
-    #... now the linearized eigenfrequencys can be calculated
-    eigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0])
-    deigfreq=2*np.pi/np.sqrt(mdc[2]/mdc[0]-(0.5*mdc[1][np.where(np.array(omega)<=eigfreq)[0][0]]/mdc[0])**2)
-    pandas.DataFrame(np.vstack((mdc[0],mdc[1][0],mdc[2],eigfreq,deigfreq,wec.floater.Calc_CoG())).transpose(),columns=["mass[kg]","damping [Ns/m]","stiffness [N/m]","eigenperiod [s]","damped eigenperiod [s]","center of gravity (heave) [m]"]).round(2).to_csv(folder0+"info.csv",index=False)
+    #calculate eigenfrequency for heave
+    omega0=np.sqrt(mdc[2]/mdc[0]);#first guess without period dependent parameter
+    for i in range(2):
+        param = parameters(None,None);#parametrise on base of the current buoy
+        param.init_hydro([omega0]); #select the frequencies
+        mdc=param.mdc(0);
+        omega0=np.sqrt(mdc[2]/mdc[0]);
+        omega0d=np.sqrt(mdc[2]/mdc[0]-(0.5*mdc[1]/mdc[0])**2)
+    pandas.DataFrame(np.vstack((mdc[0],mdc[1][0],mdc[2],6.28/omega0,6.28/omega0d,wec.floater.Calc_CoG())).transpose(),columns=["mass[kg]","damping [Ns/m]","stiffness [N/m]","eigenperiod [s]","damped eigenperiod [s]","center of gravity (heave) [m]"]).round(2).to_csv(folder0+"info.csv",index=False)
 
     ##clearning up
     #wec.release();
