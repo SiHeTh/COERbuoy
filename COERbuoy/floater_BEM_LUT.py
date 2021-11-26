@@ -93,7 +93,7 @@ class Floater_BEM(Floater):
         
         #Calculate hydro forces for each DOF
         for i in range(len(ret)):
-            FK=np.sum(np.real(exc1[i])*Awave[0]+np.imag(exc1[i])*Awave[1]);
+            FK=np.sum(np.real(exc1[i])*Awave[0]-np.imag(exc1[i])*Awave[1]);
             ret[i]=res[0][i]+FK;#buoyance + FK force
         Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.conjugate(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*np.conjugate(exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);

@@ -33,22 +33,16 @@ class Floater_LIN(Floater_BEM):
         am1 = np.array(res[3]);#added mass @ inf
         
         am_omom=am_omega#*self.omega;
-        #am_omom[0][0]=am_omom[0][0]-am_omom[0][0][-1];
-        #am_omom[0][1]=am_omom[0][1]-am_omom[0][1][-1];
-        #am_omom[1][0]=am_omom[1][0]-am_omom[1][0][-1];
-        #am_omom[1][1]=am_omom[1][1]-am_omom[1][1][-1];
         #Generate wave from movement
         if (np.sum(np.abs(exc1))>0):
             r1=am_omom[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+am_omom[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
             r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]-Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
-            #r1=self.omega*am_omega[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+self.omega*am_omega[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
-            #r2=self.omega*am_omega[0][0]/np.conjugate(exc1[0])*(v[0]-Awave[3])+self.omega*am_omega[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
             wave.add_diracWave(-2/np.pi*r1,t,True);
             wave.add_diracWave2(-2/np.pi*r2,t,True);
         
         #Calculate hydro forces for each DOF
         for i in range(len(ret)):
-            FK=np.sum(np.real(exc1[i])*Awave[0]+np.imag(exc1[i])*Awave[1]);
+            FK=np.sum(np.real(exc1[i])*Awave[0]-np.imag(exc1[i])*Awave[1]);
             ret[i]=FK;#buoyance + FK force
             if i==1:
                 ret[i]=ret[i]-self.Area(0)*self.g*self.rho*(z0)+self.Volume(0)*self.rho*self.g;

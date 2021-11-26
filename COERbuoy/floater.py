@@ -77,7 +77,7 @@ class Cone:
       
 
       
-      return np.array([F_st,0]);
+      return np.array([F_st,F_st]);
   
   def Radius(self,z0):
       if(z0>=self.z1) and (z0<=self.z2):      
