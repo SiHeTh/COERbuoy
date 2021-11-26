@@ -110,7 +110,7 @@ The command line interface can be called via the terminal/shell/command line, an
 (3) As a python package the full potential is available when used directly in python, or a language with python support, such as MATLAB or octave.
 \paragraph{Principle usage}
 To achieve all three aims, multiple handling concepts have to be mixed. The default rule is, that the working directory, mostly the folder the program was started from, determines the behaviour. The program will look for a file called "coerbuoy\_setting.txt" (see Section \ref{sec:settings}) which specifies the principal settings. If this file is not found, the global setting, defined in a test file in the COERbuoy folder is used. When used via the command line or called as a library, the output file will be written into the working directory. Also files defining the controller passed as argument will be searched first in the current folder.\\
-The GUI has a slightly different approach. When starting the first time, it will create a folder "coerbuoy\_data" in the local home directory. This folder has two subfolders: "controller" and "results". The second will be used to store the output data file of simulations run via the GUI, the second can be used to store controller. If COERbuoy can not find the controller file in the current directory, it will search in the "coerbuoy\_data$>$controller" folder. This behaviour is the same for the GUI, the CLI or when used as a python library. 
+The GUI has a slightly different approach. When starting the first time, it will create a folder "coerbuoy\_data" in the local home directory\footnote{Please not the local home folder is not (necessarily) the "My Documents" folder! Under Windows it the path is usually C:$>$[User]$>$}. This folder has two subfolders: "controller" and "results". The second will be used to store the output data file of simulations run via the GUI, the second can be used to store controller. If COERbuoy can not find the controller file in the current directory, it will search in the "coerbuoy\_data$>$controller" folder. This behaviour is the same for the GUI, the CLI or when used as a python library. 
 \section{Running COERbuoy(1)}
 \subsection{Running COERbuoy(1) from within python}
 To run a simulation with user defined settings, the \textit{run} function must be started:
@@ -393,10 +393,10 @@ The system can be parametrised as a (linear) spring-mass-damper system be callin
 #[m,d,c]=param.pto_mdc(z);
 #[m,d,c]=param.mdc(z);
 m_pto=param.pto_mdc(0);
-m=param.mdc(0);
+m=param.mdc(0)[-1];
 added_mass=m_pto-m;
 \end{verbatim}
-The return values are all scalars, except the damping parameter of $mdc(z)$, which is a 1xn vector.
+The return values of $pto_mdc$ are all scalars, while the mass and damping values returned from $mdc$ are 1xn vectors (related to the vector with the angular frequencies), except the stiffness parameter of $mdc(z)$, which is a scalar.
 \section{Example}
 A optimal damping controller, that automatically selects the optimal damping for an period (to choose) based on the current selected device can be seen in Listing \ref{fig:controller_python}.
 \begin{figure}

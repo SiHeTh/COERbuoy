@@ -326,10 +326,10 @@ def reg_wave(H,p,n,ctrl):
     p=float(p);
     t0=np.max([p*2,0]);#4
     if (p<6):
-        t0=p*8;
+        t0=p*5;
     t2=np.max([t0+p*3*3,0]);#6
     if (t2<20):
-        t2=30*p;
+        t2=10*p;
     t=np.arange(0,t2,1/(omega_cut_off*np.pi))
     y=H/2*np.sin(2*np.pi/p*t)
     return start_simu(time=t,wave=y,name=n, t0=t0, control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*H**2*p)
@@ -374,9 +374,9 @@ if __name__=="__main__":
     t=np.linspace(0,10,100);
     #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
     #reg_wave(4,3.5,"test.csv","Controller1.py");
-    reg_wave(1,12,"test.csv","controller_reactive.py")
+    #reg_wave(1,12,"test.csv","controller_reactive.py")
     #decay_test(0.15,"decay1.csv",20,"linear")
-    #reg_wave(1,4,"output.csv","linear")
+    reg_wave(1,4,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
    
