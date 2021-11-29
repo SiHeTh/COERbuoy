@@ -15,12 +15,9 @@ import json;
 import COERbuoy.utils as utils;
 from COERbuoy import connection;
 from COERbuoy import floater_LIN as Floater;
-#from COERbuoy import dynamics_coerbuoy as dyn_wec;
 import pandas;
-#from COERbuoy import floater_BEM_LUT as Floater;
 from COERbuoy import wavefield;
 from scipy.interpolate import interp1d;
-#omega_cut_off=dyn_wec.omega_cut_off;
 omega_cut_off=4;
 import os;
 pkg_dir=os.path.dirname(__file__);
@@ -53,7 +50,6 @@ def start_simu (**kwargs):
     #    class_hydro=data.get("hydro","Floater");
     #    WECfolder=data.get("WECfolder","COERbuoy.data.COERbuoy");
    
-    #dyn_wec=importlib.import_module(utils.wec_dir+".dynamics","COERbuoy");
     spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.wec_dir,"dynamics.py"));
     dyn_wec=importlib.util.module_from_spec(spec);
     spec.loader.exec_module(dyn_wec);
@@ -89,7 +85,6 @@ def start_simu (**kwargs):
             damping=0;
         elif kwargs["control"]!="":
             ctrl0=kwargs["control"].split(" ");
-            print(host)
             ctrlcmd=="";
             if len(ctrl0)>1: #ctrl command already provided
                 ctrlcmd=ctrl0[0];

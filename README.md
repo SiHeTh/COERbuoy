@@ -1,6 +1,8 @@
 # COERbuoy
 ### A realistic Wave Enegery Converter model to evaluate controllers
 
+#### Fore more information, have a look at the [manual](https://github.com/SiHeTh/COERbuoy/raw/main/manual.pdf) ####
+
 NOTE: The commands how to run python might differ between systems, and the ones presented here might not work on every machine. Please refer to https://www.python.org/ to find the correct commands for your system.
 <br>
 ## 1. Repository structure
@@ -28,11 +30,11 @@ Download [python3](https://www.python.org/downloads/).
 
 Install COERbuoy using pip:
 
-| Windows                   |
+| Variant 1          |
 |:--------------------------|
 |`py -m pip install COERbuoy`|             
 
-| Windows/Linux/MacOS              |
+| Variant 1              |
 |:--------------------------------|
 | `python3 -m pip install COERbuoy`|
 
@@ -40,7 +42,7 @@ Install COERbuoy using pip:
 
 Run graphical user interface:
 
-| Windows                   | &nbsp;&nbsp; | Windows/Linux/MacOS             |
+| Variant 1                    | &nbsp;&nbsp; | Variant 1              |
 |:--------------------------|--------------|:--------------------------------|
 |`py -m COERbuoy.GUI`       |              | `python3 -m COERbuoy.GUI      ` |
 
@@ -49,26 +51,30 @@ Run graphical user interface:
 
 Brettschneider wave with significant wave height 1.5 m and wave energy period of 6 s and a linear generator damping:
 
-| Windows                   |
+| Variant 1                    |
 |:--------------------------|
 |`py -m COERbuoy --bretschneider_wave 1.5 6 results.csv linear`|             
 
-| Windows/Linux/MacOS             |
+| Variant 1             |
 |:--------------------------------|
 | `python3 -m COERbuoy --bretschneider_wave 1.5 6 results.csv linear`|
 
 Regular wave with height 1.5 m and period of 6 s and a linear generator damping:
 
-| Windows                   |
+| Variant 1                    |
 |:--------------------------|
 |`py -m COERbuoy --regular_wave 1.5 6 results.csv linear`|             
 
-| Windows/Linux/MacOS             |
+| Variant 1              |
 |:--------------------------------|
 | `python3 -m COERbuoy --regular_wave 1.5 6 results.csv linear`|
 
 
 
 ## 4. Version history
-
-0.1.2 - added compatibility with numpy version > 1.16
+- 0\.1\.2 
+   - added compatibility with numpy version > 1.16
+- 0\.2
+   - manual added
+   - settings tab added in GUI
+   - simplify use of custom controller (via new folder and automatical detection of ocatve/python interpreter)

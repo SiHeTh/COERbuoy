@@ -16,7 +16,10 @@ $.ajax({url:'settings.json',
                $("#conn_addr").val(data0["conn_ip"]);
                $("#conn_port").val(data0["conn_port"]);
                $("#GUI_addr").val(data0["host"]);
-               $("#GUI_port").val(data0["port"]);}
+               $("#GUI_port").val(data0["port"]);
+               $("#ODE_dt").val(data0["ode_time_step"]);
+               $("#control_dt").val(data0["dt_controller"]);
+               $("#file_resolution").val(data0["resolution"]);}
                });
                
 $("#set_userdir").on("click",function(){change_settings("user_dir",$("#userdir").val())});
@@ -24,6 +27,9 @@ $("#set_conna").on("click",function(){change_settings("conn_ip",$("#conn_addr").
 $("#set_connp").on("click",function(){change_settings_number("conn_port",$("#conn_port").val())});
 $("#set_GUIa").on("click",function(){change_settings("host",$("#GUI_addr").val())});
 $("#set_GUIp").on("click",function(){change_settings_number("port",$("#GUI_port").val())});
+$("#set_ODE_dt").on("click",function(){change_settings_number("ode_time_step",$("#ODE_dt").val())});
+$("#set_control_dt").on("click",function(){change_settings_number("dt_controller",$("#control_dt").val())});
+$("#set_file_resolution").on("click",function(){change_settings_number("resolution",$("#file_resolution").val())});
         });
         
 function change_settings(key,val) {
@@ -73,5 +79,11 @@ The TCP address and port used by the GUI server:
 </br>
 <input id="GUI_addr" type="text" placeholder="default address"/><button id="set_GUIa">Set</button>
 <input id="GUI_port" type="text" placeholder="default port"/><button id="set_GUIp">Set</button>
+<h3>Time steps settings</h3>
+The step width of the ODE solver and the controller; the controller time step must be a (positive integer) multiple of the ODE step width:
+</br>
+Time step ODE solver: <input id="ODE_dt" type="number" step="0.001" min="0.001" max="0.1" placeholder="time step solver"/><button id="set_ODE_dt">Set</button></br>
+Time step controller: <input id="control_dt" type="number" step="0.001" min="0.001" max="2" placeholder="time step controller"/><button id="set_control_dt">Set</button></br>
+Time step for output file: <input id="file_resolution" type="number"  step="0.001" min="0.001" max="2" placeholder="time step output"/><button id="set_file_resolution">Set</button>
 </body>
 </html>

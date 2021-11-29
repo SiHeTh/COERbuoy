@@ -375,7 +375,7 @@ To get a key-value pair dictionary with the current parameters of the model, the
 data=param.dic_param();
 c_ws=data("negative_spring_force");
 \end{verbatim}
-The parameters obtainable are model specific. In the example above the negative spring coefficient of the COERbuoy1 model is obtained; this value does not exist in the OESsphere model.
+The parameters obtainable are model specific. In the example above the negative spring coefficient of the COERbuoy1 model is obtained; this value does (for example) not exist in the OESsphere model.
 The geometric properties at submergence level z (with $z=0$ is the equilibrium position) are obtained as follows:
 \begin{verbatim}
 #[area,volume]=param.area_vol(z);
@@ -396,7 +396,7 @@ m_pto=param.pto_mdc(0);
 m=param.mdc(0)[-1];
 added_mass=m_pto-m;
 \end{verbatim}
-The return values of $pto_mdc$ are all scalars, while the mass and damping values returned from $mdc$ are 1xn vectors (related to the vector with the angular frequencies), except the stiffness parameter of $mdc(z)$, which is a scalar.
+The return values of $pto_mdc$ are all scalars, while the mass and damping values returned from $mdc$ are 1xn vectors (related to the vector with the angular frequencies).
 \section{Example}
 A optimal damping controller, that automatically selects the optimal damping for an period (to choose) based on the current selected device can be seen in Listing \ref{fig:controller_python}.
 \begin{figure}

@@ -1,1 +1,1 @@
-{"host": "localhost", "port": 8080, "dt_controller": 0.1, "ode_time_step":0.05, "hydro": "Floater_BEM", "WECfolder": "[data.COERbuoy1]", "resolution": 0.1, "status_message": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
+{"host": "localhost", "port": 8080, "dt_controller": 0.1, "ode_time_step": 0.05, "hydro": "Floater_BEM", "WECfolder": "[data.COERbuoy1]", "resolution": 0.1, "status_message": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}

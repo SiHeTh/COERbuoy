@@ -319,7 +319,7 @@ def run():
     print("Bind to "+hostName+" at port "+str(serverPort)+".")
     #HTTPServer.socket.setsockopt(socket.SOL_SOCKeT, socket.SO_REUSEADDR,1);
     webServer = ThreadingHTTPServer((hostName, serverPort), GUIServer)
-    webbrowser.open("http://localhost:8080")
+    webbrowser.open("http://"+str(hostName)+":"+str(serverPort))
     try:
         webServer.serve_forever()
     except KeyboardInterrupt:

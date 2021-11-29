@@ -51,7 +51,7 @@ def get():
     global class_hydro, ode_time_step, wec_dir, wec_dir0,conn_ip, conn_port, resolution, dt_controller, msg_status, controller0, results0, user_dir;
     user_dir=os.path.join(os.path.expanduser("~"),"COERbuoy_data")
     class_hydro="floater_bem";
-    wec_dir="[coerbuoy.data.coerbuoy]";
+    wec_dir="[data.COERbuoy1]";
     wec_dir0=wec_dir;
     conn_ip="localhost";
     conn_port=5050;
