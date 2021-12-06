@@ -55,47 +55,11 @@ class WEC():
             data=json.load(file);
             #generator damping (only for testing)
             self.damping =data.get("PTO_damping",100000);
-            #negatie spring stiffnes
-            self.c_fs=data.get("negative_spring_stiffness",20*1000*9.81);
-            #length of negative spring
-            self.l_fs=data.get("negative_spring_length",2.0);
-            #Drag coefficent heave
-            self.cD=data.get("viscous_drag_heave",0.2);
-            #Drag coefficent surge
-            self.cDs=data.get("viscous_drag_surge",0.5);
-            #Percentage mass floater
-            self.mb=data.get("mass_percent_floater",0.25);
-            #added mass floater
-            self.m0=data.get("added_mass",self.mass);
-            #generator efficency
-            self.losses_coil=1/data.get("eff_generator",0.8);
-            #mooring line stiffness
-            self.ml_c=data.get("mooring_stiffness",4e5);
-            #mooring line damping
-            self.ml_d=data.get("mooring_damping",4000);
-            #static friction
-            self.fr_s=data.get("friction_force_static",0);
-            #kinetic friction
-            self.fr_d=data.get("friction_force_kinetic",0);
-            #friction damping
-            self.d_add=data.get("friction_damping",0);
-            #maximum braking power
-            self.P_mbreak=data.get("brake_Pmax",1000);
-            #generator copper resistance
-            self.gen_Rc=data.get("generator_Rc",0.01);
-            #generator inductance coefficent
-            self.gen_cL=data.get("generator_c_L",1.57);
-            #generator flux coefficent
-            self.gen_clambda=data.get("generator_c_lambda",365*3);
-            #generator magnetic saturation current
-            self.gen_I_lim=data.get("generator_I_s",100000);
-            #mooring line length
-            self.l=data.get("l_mooring",30);
             
     #Get linearised mass, damping and spring coefficent        
     def pto_mdc (self,z):
         m=(self.mass);
-        d=self.d_add#;+self.Calc_drag(0,1);
+        d=0;#self.d_add#;+self.Calc_drag(0,1);
         c=0#-self.c_fs;
         return [m,d,c];
     
@@ -116,7 +80,7 @@ class WEC():
       return -self.d_add*(dx1);
     
     def get_surge(self,x):
-        return -1*(x[0]+self.l)*np.sin(x[2]);
+        return -1*(x[0])*np.sin(x[2]);
     def get_translator_speed(self,x):
         return x[1];
     def get_translator_speed_surge(self,x):
@@ -170,11 +134,7 @@ class WEC():
       #x[7] - time integrated generator force
       #x[8] - absorbed energy
       
-      alpha=x[2];
       stroke=x[0];
-      
-      #if PTO_force>0.1:
-      #    PTO_force=PTO_force+1;
             
       heave=x[0];
       surge=self.get_surge(x);
@@ -183,13 +143,12 @@ class WEC():
       
       #Drag forces
       #Drag force in heave
-      Fdrag=self.Calc_drag(heave,heave_v);
+      #Fdrag=self.Calc_drag(heave,heave_v);
       #Drag force in sway
-      Fdrags=self.Calc_drag_surge(surge,surge_v);
+      #Fdrags=self.Calc_drag_surge(surge,surge_v);
       
       
-      f_hy = self.buoy.get_forces(t,wave,[surge,heave,alpha],[0,x[1],0],self.acc)
-      #f_hy[0][0]=f_hy[0][0];
+      f_hy = self.buoy.get_forces(t,wave,[0,heave,0],[0,x[1],0],self.acc)
       f_exc=f_hy[0][1]-self.mass*9.81;
       
       #Generator force

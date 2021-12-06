@@ -42,7 +42,7 @@ class Floater_LIN(Floater_BEM):
         
         #Calculate hydro forces for each DOF
         for i in range(len(ret)):
-            FK=np.sum(np.real(exc1[i])*Awave[0]-np.imag(exc1[i])*Awave[1]);
+            FK=np.sum(np.real(exc1[i])*Awave[0]+np.imag(exc1[i])*Awave[1]);
             ret[i]=FK;#buoyance + FK force
             if i==1:
                 ret[i]=ret[i]-self.Area(0)*self.g*self.rho*(z0)+self.Volume(0)*self.rho*self.g;

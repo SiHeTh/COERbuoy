@@ -26,10 +26,10 @@ Writing control strategies for COERbuoy1 is very simple, as the Control Interfac
 \tableofcontents
 \newpage
 \chapter{Quick start}
-COERbuoy1 is a realistic WEC model with integrated benchmark. It is an extension to the COERbuoy platform a multi-purpose WEC modelling tool. More specifically, COERbuoy1 starts the COERbuoy platform using a specific WEC and specific settings, and on top provides a pre-configured wave batch, which is run as the benchmark. The rest, thus the graphical user interface (GUI), the possibility to run arbitrary waves and so on, is all functionality of the COERbuoy model. For creating a cotroller for COERbuoy1, it may be benefical to use the full functionality of the COERbuoy platform for testing and debugging and only at the last step start the benchmark process. Thus this manual will contain functions of the COERbuoy platform and the COERbuoy1 benchmark tool.
-\section{Installing COERbuoyOne}
+COERbuoy1 is a realistic WEC model with integrated benchmark. It is an extension to the COERbuoy platform, a multi-purpose WEC modelling tool. More specifically, COERbuoy1 starts the COERbuoy platform using a specific WEC and specific settings, and on top provides a pre-configured wave batch, which is run as the benchmark. The rest, thus the graphical user interface (GUI), the possibility to run arbitrary waves and so on, is all functionality of the COERbuoy model. For creating a controller for COERbuoy1, it may be beneficial to use the full functionality of the COERbuoy platform for testing and debugging and only at the last step start the benchmark process. Thus this manual will contain functions of the COERbuoy platform and the COERbuoy1 benchmark tool.
+\section{Installing COERbuoy1}
 First, a python3 interpreter is needed, which is freely available at www.python.org. Depending on the operating system and way of installation, there are multiple possibilities how to start python3. Entering the commands "py", "python3" or "python" in the command terminal will show which of these commands opens the python3 interpreter on the current platform. Here we will use the command "python3" in the examples.\\
-The COERbuoy1 platform needs additional libraries, however, when installing it via the python3 package manager pip, these dependencies are resolved automatically. To install COERbuoy1 with pip enter:
+The COERbuoy1 platform needs additional libraries, however, when installing it via the python3 package manager pip, these dependencies are resolved automatically. To install COERbuoy1 via pip enter:
 \begin{verbatim}
 >python3 -m pip --install COERbuoyOne
 \end{verbatim}
@@ -37,9 +37,9 @@ The successful installation can be verified by starting COERbuoy1 with the follo
 \begin{verbatim}
 >python3 -m COERbuoyOne --regular_wave 1 6 "outfile.csv" "linear"
 \end{verbatim}
-If this runs successfully, and outputs the absorbed power at the end, it is time to continue with the next step.
+If this runs successfully, thus outputs the absorbed power, it is time to continue with the next step.
 \subsection{The GUI}
-The GUI provides an easy to use interface for the COERbuoy platform. Please observe that it allows to change settings, which are automatically reverted when starting COERbuoy1, such as the selection of the WEC model. The first start will create a folder called "COERbuoy\_data" in the home directory, containing two subfolders "controller" and "results". In  the first folder self-written controller can be placed and then executed from the start page of the GUI.\\
+The GUI provides an easy to use interface for the COERbuoy platform\footnote{The GUI allows to change the settings. Please keep in mind that these changes are automatically reverted when starting COERbuoy1.}. The first start will create a folder called "COERbuoy\_data" in the home directory, containing two subfolders "controller" and "results". In  the first folder self-written controller can be placed and then executed from the start page of the GUI.\\
 To start the GUI use one of the following commands
 \begin{verbatim}
 >python3 -m COERbuoyOne --GUI
@@ -458,4 +458,56 @@ conn_model.close();
 \end{lstlisting}
 \caption{Simple optimal damping controller for the COERbuoy1 model written in python.}\label{fig:controller_python}
 \end{figure}
+\chapter{The  WEC models}
+The COERbuoy platform is a multi-purpose platform, thus it can simulate almost all kinds of heave-point WECs. It comes with three several build in models, of which the COERbuoy1 model is the most advanced.
+The following models are presented here:
+\begin{itemize}
+	\item The COERbuoy1 model, the model for the COERbuoy1 benchmark. The aim is, that this model should be the same, as the one used in the COERbuoy1 benchmark. However, the benchmark model is located in the COERbuoyOne model, thus if the settings of the COERbuoy1 model are changed in the COERbuoy platform, it will have no effect on the benchmark.
+	\item The COERsimple model, which uses the COERbuoy geometry, but removes all forces unless the linear hydrodynamic and an ideal generator force. Furthermore, this model is limited to heave. This model is designed as an ideal WEC model for testing purposes. 
+\end{itemize}
+\subsection{COERbuoy1}
+The COERbuoy1 model is described in \textit{S. Thomas, J. Hals-Todalshaug, J. Ringwood, ``A realistic nonlinear benchmark problem for
+wave energy controllers - COERbuoy1,'' in 14th European Wave and Tidal Energy Conference,
+Plymouth, UK, 2021}. The parameters can be read directly from the GUI (Parameter tab); they are:
+\begin{figure}[h!]\label{tab:param_settings}
+	\begin{tabular}{|c|p{7cm}|p{2cm}|c|}
+		\hline
+		parameter name & description & values & unit \\
+		\hline
+		negative\_spring\_force&constant force of the negative spring& 450000 & Ns/m \\
+		negative\_spring\_lenth&Length of the spring; related to stiffness&1.6&m\\
+		negative\_spring\_stroke&When exeeding this stroke length, the negative spring value is 0&5&m\\
+		\hline
+		viscous\_drag\_coefficent\_heave&drag coefficent in heave&0.2&-\\
+		viscous\_drag\_coefficent\_surgee&drag coefficent in surge&0.2&-\\
+		\hline
+		mass\_percent\_floater&splits the buoyancy force into gravitational force and pre-tension force&0.8&m\\
+		\hline
+		generator\_Rc&internal resistance of the generator&2&$\Omega$\\
+		generator\_c\_L&Inductance constant of the generator&60&-\\
+		generator\_c\_lambda&Lambda factor of the generator&4000&-\\
+		generator\_I\_s&saturation current of the generator&300&A\\
+		\hline
+		heave only&1-heave motion only; 0-heave and surge motion&0&-\\
+		\hline
+		friction\_force\_static&Static (when not moving) friction&30000&N\\
+		friction\_force\_kinetik&Kinetik (when moving) friction&1500&N\\
+		friction\_force\_damping&Velocity proportional friction&7500&Ns/m\\
+		\hline
+		l\_mooring&length mooring line&15&m\\
+		\hline
+	\end{tabular}
+	\caption{Parameters of thex COERbuoy1 model}
+\end{figure}
+
+\subsection{COERsimple}
+The equation of motion in heave ($x_y$), which is the only considered motion, is:
+\begin{align}\label{eq:COERsimple}
+\ddot{x}_z&=0\text{, if }F_g+F_h+F_m<F_b \\
+	&=\frac{F_g+F_h-F_m}{m_b+m_a}\text{, else,} 
+\end{align}
+where $F_g$ is the generator force, $F_h$ the hydrodynamic forces (includes: buoyancy, excitation and radiation force) and $F_m=m_b g$ the gravity force of the body, related to the body mass $m_b$ and the gravitational acceleration $g\sim9.81$. The added mass at infinity frequency is $m_a$, amd $F_b$ is the breaking force.
+\paragraph{Body shape}
+the body shape is the same as the COERbuoy1, where the profile is described in surge (x), heave (z) coordinates as follows (x,z): (0,-4.5), (3,-2), (3.7,-1), (4,0), (3.7,1), (3,2), (0,4.5).
+ 
 \end{document}
