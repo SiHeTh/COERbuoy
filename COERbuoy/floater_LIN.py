@@ -17,7 +17,8 @@ pi=np.pi;
 #wave=wavefield.wavefield(np.zeros(20),np.linspace(1,20),2)
 
 class Floater_LIN(Floater_BEM):   
-    
+    eq_force=None;
+    res=None;
     def get_forces(self, t, wave, p, v, a):
         z0=p[1];
         x0=p[0];
@@ -25,12 +26,16 @@ class Floater_LIN(Floater_BEM):
         Awave=wave.get(t,x0);
         eta=np.sum(Awave[0]);
         
-        res=self.Calculate(0*z0, 0*x0, 0*delta0, eta);#Calculate coefficents
+        if self.eq_force is None:
+            self.eq_force=self.Calculate(0,0,0,0)[0][1];
+            self.res=self.Calculate(0*z0, 0*x0, 0*delta0, 0*eta);
+            
+        #res=self.Calculate(0*z0, 0*x0, 0*delta0, eta);#Calculate coefficents
         
         ret=[0,0,0];#return array
-        exc1 = np.array(res[1]);#Exitation force
-        am_omega = np.real(res[2]);#added mass over omega
-        am1 = np.array(res[3]);#added mass @ inf
+        exc1 = np.array(self.res[1]);#Exitation force
+        am_omega = np.real(self.res[2]);#added mass over omega
+        am1 = np.array(self.res[3]);#added mass @ inf
         
         am_omom=am_omega#*self.omega;
         #Generate wave from movement
@@ -43,9 +48,11 @@ class Floater_LIN(Floater_BEM):
         #Calculate hydro forces for each DOF
         for i in range(len(ret)):
             FK=np.sum(np.real(exc1[i])*Awave[0]+np.imag(exc1[i])*Awave[1]);
+            
             ret[i]=FK;#buoyance + FK force
             if i==1:
-                ret[i]=ret[i]-self.Area(0)*self.g*self.rho*(z0)+self.Volume(0)*self.rho*self.g;
+                #print(np.sum(np.real(exc1[i])*Awave[0]))
+                ret[i]=ret[i]-self.Area(0)*self.g*self.rho*(z0)+self.eq_force;#self.Volume(0)*self.rho*self.g;
         Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.conjugate(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*np.conjugate(exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
         return [np.real(ret),[am1[0],am1[1],am1[2]]];#hydro force, added mass @ inf
