@@ -38,15 +38,18 @@ class diracWave():
     bcos=True;
     def __init__(self,omega,A,t0,bc):
         self.omega=omega;
-        self.A=A*(self.omega[1]-self.omega[0]);
+        self.A=1#A*(self.omega[1]-self.omega[0]);
         self.phase=np.angle(self.A)*0;
         self.t1=0.5/np.pi/np.max(omega);
         self.t0=t0#-t1;
-        self.te=t0+np.min([0.25*np.pi/np.min(omega),4])#-t1;
+        self.te=t0+np.max([0.25*np.pi/np.min(omega),4*0])#-t1;
         self.bcos=bc;
-        #for ts in np.linspace(self.t0,self.te,30):
-        #    print(ts, np.real(np.sum(self.evaluate(ts))))
-        #print("--");
+        if False:
+            irf=[]; 
+            for ts in np.linspace(self.t0,self.te,30):
+                irf.append(np.real(np.sum(self.evaluate(ts))));
+            print(irf);
+            print(self.te-self.t0);
     def evaluate(self, t):
         if t<self.t0 or t>self.te:
             return self.A*0;
