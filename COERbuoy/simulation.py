@@ -168,7 +168,7 @@ def start_simu (**kwargs):
             #    self.t.pop();
             #    for (i,e) in enumerate(x):
             #        self.x[i].pop();
-            if (t>self.t[-1]+0.05):
+            if (t>self.t[-1]+0.0000000125):
                 self.t.append(t);
                 for (i,e) in enumerate(x):
                     self.x[i].append(e);
@@ -196,7 +196,7 @@ def start_simu (**kwargs):
       # While the ODE solver can jump forth and back in time; the control is only executed
       # the first time a specific time is passed
       # This is not _exact_, but a good compramise between computational complexity and accuracy
-      if t-dynamics.tcontrol>=utils.dt_controller-0.05*utils.dt_controller or t-dynamics.tcontrol<0:
+      if utils.dt_controller<0 or t-dynamics.tcontrol>=utils.dt_controller-0.05*utils.dt_controller or t-dynamics.tcontrol<0:
           #print(t-dynamics.tcontrol)
           tw=100;
           tw1=tw-1;
@@ -221,7 +221,7 @@ def start_simu (**kwargs):
                    "test":np.zeros(100)
                    
                    }
-              
+              #print([msg["stroke_pos"][-1],x[0]])
               # Exchange data with controller
               data=conn_ctrl.exchange_model(msg["time"],msg["wave"],msg["wave_forecast"],msg["stroke_pos"],msg["stroke_speed"],msg["angular_pos"],msg["angular_speed"],msg["force"],msg["test"])
               
@@ -273,7 +273,7 @@ def start_simu (**kwargs):
     t_start=time.time();
 
     # Start the ODE-solver
-    sol = solve_ivp(dynamics,[0,t[-1]],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=1,atol=1)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
+    sol = solve_ivp(dynamics,[0,t[-1]],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=100,atol=100)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
     print("Elapsed time :"+str(time.time()-t_start)+"\n");
 
     # Write the solution of the data frame
@@ -319,14 +319,14 @@ def reg_wave(H,p,n,ctrl):
     print("Regular wave")
     H=float(H);
     p=float(p);
-    t0=np.max([p*2,0]);#4
-    if (p<6):
-        t0=p*5;
-    t2=np.max([t0+p*3*3,0]);#6
-    if (t2<20):
-        t2=10*p;
+    t0=np.max([p*8,0]);#4
+    #if (p<6):
+    #    t0=p*5;
+    t2=np.max([t0+p*8,0]);#6
+    #if (t2<20):
+    #    t2=10*p;
     t=np.arange(0,t2,1/(omega_cut_off*np.pi))
-    y=H/2*np.sin(2*np.pi/p*t)
+    y=H/2*np.cos(2*np.pi/p*t)
     return start_simu(time=t,wave=y,name=n, t0=t0, control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*H**2*p)
 
 
@@ -369,9 +369,9 @@ if __name__=="__main__":
     t=np.linspace(0,10,100);
     #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
     #reg_wave(4,3.5,"test.csv","Controller1.py");
-    #reg_wave(1,12,"test.csv","controller_reactive.py")
+    #reg_wave(1,10,"test.csv","controller_reactive.py")
     #decay_test(0.15,"decay1.csv",20,"linear")
-    reg_wave(1,4,"output.csv","linear")
+    reg_wave(1,80,"output.csv","linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
    
