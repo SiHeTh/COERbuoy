@@ -82,11 +82,11 @@ class Floater_BEM(Floater):
         am_omom=am_omega#*self.omega;
         #Generate wave from movement
         if (np.sum(np.abs(exc1))>0):
-            dx=v[1]*0.01;
-            res2=self.Calculate(z0, x0+dx, 0*delta0, eta);
-            r1=am_omom[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+am_omom[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
-            r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]+Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
-            
+            #dx=v[1]*0.01;
+            #res2=self.Calculate(z0, x0+dx, 0*delta0, eta);
+            r1=am_omom[1][1]/exc1[1]*(v[1]-np.sum(Awave[2]))+am_omom[0][1]/exc1[1]*(v[0]-np.sum(Awave[3]));
+            r2=am_omom[0][0]/exc1[0]*(v[0]+np.sum(Awave[3]))+am_omom[1][0]/exc1[0]*(v[1]-np.sum(Awave[2]));
+            #print([v[1],np.sum(Awave[2])])
             
             wave.add_diracWave(-2/np.pi*r1,t,True);
             wave.add_diracWave2(-2/np.pi*r2,t,True);
@@ -95,7 +95,7 @@ class Floater_BEM(Floater):
         for i in range(len(ret)):
             FK=np.sum(np.real(exc1[i])*Awave[0]+np.imag(exc1[i])*Awave[1]);
             ret[i]=res[0][i]+FK;#buoyance + FK force
-        Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.conjugate(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*np.conjugate(exc1[1]))),0];#radiation force
+        Frad=[np.real(np.sum(wave.get_rad2(t,x0)*exc1[0])),np.real(np.sum(wave.get_rad(t,x0)*exc1[1])),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
         
         self.t_old=t;

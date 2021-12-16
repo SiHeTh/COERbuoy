@@ -34,16 +34,28 @@ class Floater_LIN(Floater_BEM):
         
         ret=[0,0,0];#return array
         exc1 = np.array(self.res[1]);#Exitation force
-        am_omega = np.real(self.res[2]);#added mass over omega
+        rad = np.real(self.res[2]);#radiation over omega
+        amw = np.imag(self.res[2]);#added mass over omega
         am1 = np.array(self.res[3]);#added mass @ inf
+        rad1=2*3.14*(self.omega*self.omega*self.omega/self.g)/(4*pi*self.g**2*self.rho*1)*(exc1[1]*np.conjugate(exc1[1]))
+        #rad1=(self.omega*(self.omega**2)/9.81)/(4*1000*3.14*9.81**2)*(exc1[1]*np.conjugate(exc1[1]));
         
-        am_omom=am_omega#*self.omega;
+        #print("Rad")
+        #print([rad[1][1],np.real(rad1)])
+        #print([exc1[1],rad[1][1],self.omega])
+        #exit();
+        rad[1][1]=np.real(rad1);
         #Generate wave from movement
         if (np.sum(np.abs(exc1))>0):
-            r1=am_omom[1][1]/np.conjugate(exc1[1])*(v[1]-Awave[2])+am_omom[0][1]/np.conjugate(exc1[1])*(v[0]-Awave[3]);
-            r2=am_omom[0][0]/np.conjugate(exc1[0])*(v[0]-Awave[3])+am_omom[1][0]/np.conjugate(exc1[0])*(v[1]-Awave[2]);
-            wave.add_diracWave(-2/np.pi*r1,t,True);
-            wave.add_diracWave2(-2/np.pi*r2,t,True);
+            #r1=am_omom[1][1]/(exc1[1])*v[1]+rad[0][1]/(exc1[1])*v[0];
+            #r2=am_omom[0][0]/(exc1[0])*v[0]+rad[1][0]/(exc1[0])*v[1];
+            #wave.add_diracWave(-2/np.pi*r1,t,True);
+            #wave.add_diracWave2(-2/np.pi*r2,t,True);
+            wave.add_diracWave(-2/np.pi*(rad[1][1]*(v[1]-0*np.sum(Awave[2]))),t,True);
+            
+            #print([len(self.omega),len(v),len(am1)])
+            #wave.add_diracWave(-2/np.pi*((amw[1][1]-amw[1][1][-1])*self.omega+0*(v[1]-0*np.sum(Awave[2]))),t,False);
+            wave.add_diracWave2(-2/np.pi*(rad[0][0]*(v[0]-0*np.sum(Awave[3]))),t,True);
         
         #Calculate hydro forces for each DOF
         for i in range(len(ret)):
@@ -53,6 +65,9 @@ class Floater_LIN(Floater_BEM):
             if i==1:
                 #print(np.sum(np.real(exc1[i])*Awave[0]))
                 ret[i]=ret[i]-self.Area(0)*self.g*self.rho*(z0)+self.eq_force;#self.Volume(0)*self.rho*self.g;
-        Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.conjugate(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*np.conjugate(exc1[1]))),0];#radiation force
+        #print([np.real(np.sum(wave.get_rad2(t,x0))),np.real(np.sum(wave.get_rad(t,x0)*(exc1[1])))])
+        Frad=[np.real(np.sum(wave.get_rad2(t,x0)+0*(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)+0*(exc1[1]))),0];#radiation force
+        #print(exc1/(8*rad))
+        #exit();
         ret=np.array(ret)+np.array(Frad);
         return [np.real(ret),[am1[0],am1[1],am1[2]]];#hydro force, added mass @ inf

@@ -38,26 +38,30 @@ class diracWave():
     bcos=True;
     def __init__(self,omega,A,t0,bc):
         self.omega=omega;
-        self.A=1#A*(self.omega[1]-self.omega[0]);
-        self.phase=np.angle(self.A)*0;
+        self.A=A*(self.omega[1]-self.omega[0]); 
+        self.phase=0;
         self.t1=0.5/np.pi/np.max(omega);
-        self.t0=t0#-t1;
-        self.te=t0+np.max([0.25*np.pi/np.min(omega),4*0])#-t1;
+        self.t0=t0#Current time; time when radiation started
+        self.te=t0+0.25*np.pi/np.min(omega);#-t1;
         self.bcos=bc;
         if False:
-            irf=[]; 
-            for ts in np.linspace(self.t0,self.te,30):
-                irf.append(np.real(np.sum(self.evaluate(ts))));
-            print(irf);
-            print(self.te-self.t0);
+            if t0>3:
+                irf=[]; 
+                for ts in np.linspace(self.t0,self.te,30):
+                    irf.append((np.sum(self.evaluate(ts))));
+                print(np.real(irf).tolist());
+                print(np.imag(irf).tolist());
+                print(self.te-self.t0);
+                exit();
     def evaluate(self, t):
         if t<self.t0 or t>self.te:
             return self.A*0;
         #print(np.sum(self.A*np.cos(self.omega*(t-self.t0)-self.phase)))
         if self.bcos:
-            return self.A*np.cos(self.omega*(t-self.t0))
+            return self.A*np.exp(self.omega*1j*(t-self.t0))#*np.cos(self.omega*(t-self.t0))#+1j*np.imag(self.A)*np.sin(self.omega*(t-self.t0))
         else:
-            return self.A*np.sin(self.omega*(t-self.t0+self.t1))
+            return -1j*self.A*np.exp(self.omega*1j*(t-self.t0))
+            #return np.real(self.A)*np.sin(self.omega*(t-self.t0))+1j*np.imag(self.A)*np.cos(self.omega*(t-self.t0))
         return self.A*np.exp(self.omega*1j*(t-self.t0)-self.phase)#*(1-1/(self.te-self.t0)*(t-self.t0));
 
 #The class can right now only handle a 1 dimensional wave, however, in the future
@@ -108,8 +112,8 @@ class wavefield:
     
     #add the radiation wave caused by a current impulse #surge
     def add_diracWave(self,A,t0,bc):
-        if (len(self.dw)>0):
-            if t0-self.dw[-1].t0<0.001:
+        if (len(self.dw)>0):                        
+            if t0-self.dw[-1].t0<=0.05:
                 #we are too close to the previous time step
                 #do not add the wave and save computational time
                 return;
@@ -118,7 +122,7 @@ class wavefield:
     #add the radiation wave caused by a current impulse #heave
     def add_diracWave2(self,A,t0,bc):
         if (len(self.dw2)>0):
-            if t0-self.dw2[-1].t0<0.001:
+            if t0-self.dw2[-1].t0<=0.05:
                 #we are too close to the previous time step
                 #do not add the wave and save computational time
                 return;
@@ -138,7 +142,6 @@ class wavefield:
                       j=len(self.dw)+1;
                       break;
               if self.dw[j].te<t:
-                  #del self.dw[j];
                   self.dw.pop(j);
                   l=len(self.dw);
               else:
@@ -181,9 +184,11 @@ class wavefield:
     def get(self,t,x):
         a=self.A*np.cos(self.omega*t+self.phase-self.xi*x);
         b=self.A*np.sin(self.omega*t+self.phase-self.xi*x);
-        c=self.A*self.omega*np.sin(self.omega*t+self.phase-self.xi*x);
-        d=-self.A*self.omega**2*np.cos(self.omega*t+self.phase-self.xi*x);
-        return[a,b,c,d];
+        c=-self.A*self.omega*np.sin(self.omega*t+self.phase-self.xi*x);
+        d=-self.A*self.omega*np.cos(self.omega*t+self.phase-self.xi*x);
+        e=-self.A*self.omega**2*np.cos(self.omega*t+self.phase-self.xi*x);
+        f=-self.A*self.omega**2*np.sin(self.omega*t+self.phase-self.xi*x);
+        return[a,b,c,d,e,f];#wave_elevation, imag_wave_elevation, wave_speed, wave_speed_imag, wave_acceleration, wave_acceleration_imag
         
     def clear(self):
         self.dw.clear();
