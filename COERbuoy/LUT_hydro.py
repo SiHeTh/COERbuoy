@@ -51,7 +51,7 @@ def load_LUT(omegatest, bem_dir):
             if len(a)==4:
                 h0=((float)(a[1]));
                 p0=((float)(a[3]));
-                if np.abs(h_max-h0)<h_step:
+                if np.abs(h_max-h0)<h_step and h_max != h0:
                     h_step=np.round(np.abs(h_max-h0),4);
                 if h0>h_max:
                     h_max=h0;
@@ -151,7 +151,7 @@ def get_fromLUT(h,p):
 
 if __name__=="__main__":
         
-    load_LUT(np.array([0.1,0.2,0.3,0.4]),"data/COERbuoy1/BEM/");
+    load_LUT(np.array([0.1,0.2,0.3,0.4]),"data/COERsimple/BEM/");
     print("Result 1:");
     print(get_fromLUT(h_max/2, p_min/2));
     print("Result 2:");
