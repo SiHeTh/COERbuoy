@@ -133,7 +133,7 @@ def get_command_for_extension():
 
     #test octave cmd
     file="div/octave.m"
-    for cmd in ["octave","matlab"]:
+    for cmd in ["octave"]:
         try:
             p=subprocess.Popen([cmd,os.path.join(pkg_dir,file)])
             if p.wait()==42:
