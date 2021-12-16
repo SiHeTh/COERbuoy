@@ -44,6 +44,7 @@ class WEC():
         self.force_sensor=0;
         self.Ar=[[],[],[]];
         utils.get();
+        
         return;
         
     def load_buoy(self,floater_class,xi,depth,cog):
@@ -149,15 +150,22 @@ class WEC():
       
       
       f_hy = self.buoy.get_forces(t,wave,[0,heave,0],[0,x[1],0],self.acc)
+      mah=np.real(f_hy[1][1])
       f_exc=f_hy[0][1]-self.mass*9.81;
       
+      #Test with reactive control for 10 s period
+      m_c=-406458.62;
+      m_d=21864.64;
+      #m_c=(self.mass+mah)*(6.28/10)**2-self.buoy.Area(0)*1000*9.81;
+      #PTO_force=-1*float(m_d)*x[1]-m_c*x[0];
+      #PTO_force=-1*float(274637.452)*x[1];
+      #print([PTO_force,PTO_force2,brake])
       #Generator force
       F_gen=PTO_force;
-      Pabs=PTO_force*x[1];
+      Pabs=PTO_force*x[1]*0.5;
           
       #Calculate all inertia (physical mass+added mass)
-      mah=np.real(f_hy[1][1])
-      mass_sum_floater=(self.mass+np.real(mah));
+      mass_sum_floater=(self.mass+mah);
       #print(heave,f_exc)
       if (x[1]>=0):
           brake=-1*abs(brake);
@@ -177,6 +185,7 @@ class WEC():
           dx[1]=(F_sum_floater+brake)/mass_sum_floater;
           self.force_sensor=F_sum_floater+brake;
           dx[0]=x[1];
+      #print(PTO_force/(x[0]+1e-6),Pabs,x[8])
           
       
      
