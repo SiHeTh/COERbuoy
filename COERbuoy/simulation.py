@@ -24,6 +24,25 @@ pkg_dir=os.path.dirname(__file__);
 # Debugging feature
 debug=not True;
 
+class wave_series:
+    t=[];
+    y=[];
+    t0=0;
+    te=0;
+    def fromLists (self,t,y,t0=0,te=-1):
+        if te<0:
+            te=t[-1];
+        self.t=t;
+        self.y=y;
+        self.t0=0;
+        self.te=te;
+    def fromFile (self,filename,t0=0,te=-1):
+        a=np.array(pandas.read_csv(filename));#"TestFull.csv", header=None))
+        self.t=a[:,0];
+        self.y=a[:,1];
+    def to_file(self,name):
+        pandas.DataFrame(np.vstack((self.t,self.y)).transpose(),columns=["time","wave-elevation"]).round(6).to_csv(name,index=False)
+       
 # Main program
 def start_simu (**kwargs):
     host=True;
@@ -44,6 +63,7 @@ def start_simu (**kwargs):
     process=0;
     ctrl="";
     ctrlcmd="";
+    wavedata=wave_series();
     #read settings
     #with open(os.path.join(pkg_dir,"settings.txt")) as file:
     #    data=json.load(file);
@@ -111,9 +131,12 @@ def start_simu (**kwargs):
     teval=0;
     
     # t0 specify the transient time to get the device in steady state
-    # for t>t0 the absorbed power is measured
+    # for t<t0 the data is not logged
     if "t0" in kwargs:
-        teval=kwargs["t0"];
+        wavedata.t0=kwargs["t0"];
+    # te specify the transient time at the end (for a windoweds wave)
+    if "te" in kwargs:
+        wavedata.te=kwargs["te"];
         
     # The "buoy_file" contains the parameters of the WEC
     if "buoy_file" in kwargs:
@@ -125,31 +148,39 @@ def start_simu (**kwargs):
         
     # Wave data (wave elevation y over time t)...
     if "time" in kwargs and "wave" in kwargs:
-        t=kwargs["time"];
-        y=kwargs["wave"];
+        wavedata.fromList(kwargs["time"],kwargs["wave"])
+        
+    # ... get a wave series object directly ...
+    elif "wave" in kwargs:
+        wavedata=kwargs["wave"];
+            
         
     # ... or read wave data from file.
     elif "file" in kwargs:
-        a=np.array(pandas.read_csv(kwargs["file"]));#"TestFull.csv", header=None))
-        t=a[:,0];
-        y=a[:,1];
+        wavedata.fromFile(kwargs["file"]);
+        #a=np.array(pandas.read_csv(kwargs["file"]));#"TestFull.csv", header=None))
+        #t=a[:,0];
+        #y=a[:,1];
         
     # if not specify, use default settings
-    else:   
-        t=np.linspace(0,200,1000)
-        y=np.sin(1*t)
+    else:
+        wavedata.fromList(t=np.linspace(0,200,1000),y=np.sin(1*t))   
+        
+    
+    if wavedata.te<=wavedata.t0:
+        wavedata.te=wavedata.t[-1];
     
        
     #import matplotlib.pyplot as pyplt;
     
     omega_cut_off=wec.omega_cut_off;
     # Setting the wave (processed in a seperate module)
-    wave1=wavefield.wavefield.set_wave(y,t,omega_cut_off);
+    wave1=wavefield.wavefield.set_wave(wavedata.y,wavedata.t,omega_cut_off);
     
     # Calculating buoy data
     wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,300,0);
     # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
-    steps=np.array(range(0,int(1/dt*t[-1])))*dt;
+    steps=np.array(range(0,int(1/dt*wavedata.te)))*dt;
     
     # WEC reads in its parameters
     wec.load_param();
@@ -242,7 +273,7 @@ def start_simu (**kwargs):
       dynamics.ulast=wec.get_translator_speed(x);
       return out;    
 
-    dynamics.ts=np.linspace(0,t[-1]+4,int((t[-1]+4)*wec.buoy.omega[-1]*2));
+    dynamics.ts=np.linspace(0,wavedata.t[-1]+4,int((wavedata.t[-1]+4)*wec.buoy.omega[-1]*2));
     dynamics.ulast=0;
     dynamics.latch_counter=0;
     dynamics.tcontrol=0;
@@ -250,7 +281,7 @@ def start_simu (**kwargs):
     dynamics.damping=damping;
     dynamics.PTOt=[0];
     dynamics.brake=[0];
-    dynamics.duration=t[-1];
+    dynamics.duration=wavedata.t[-1];
     dynamics.xlast=history([0]*(len(init_condition)+1));
     
     if interface:
@@ -273,12 +304,16 @@ def start_simu (**kwargs):
     t_start=time.time();
 
     # Start the ODE-solver
-    sol = solve_ivp(dynamics,[0,t[-1]],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=100,atol=100)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
+    sol = solve_ivp(dynamics,[0,wavedata.te],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=100,atol=100)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
     print("Elapsed time :"+str(time.time()-t_start)+"\n");
 
+    #Cut data so that only data after transient times (if applicable) is considered
+    s1=np.argmax(sol.t>wavedata.t0)
+    ydata=sol.y[:,s1:];
+    tdata=sol.t[s1:];
     # Write the solution of the data frame
-    pandas.DataFrame(np.array([sol.t[:],np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
-    s=np.argmax(sol.t>teval)
+    pandas.DataFrame(np.array([tdata[:],np.sum(wave1.get(tdata.reshape(tdata.size,1),0)[0],1),ydata[0,:],ydata[1,:],ydata[2,:]*180/pi,ydata[3,:]*180/pi,ydata[7,:],ydata[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
+    
     
     #import matplotlib.pyplot as plt
     #plt.figure();
@@ -291,7 +326,7 @@ def start_simu (**kwargs):
     wec.release();
     
     # Output the absorbed power
-    power=(sol.y[8,-1]-sol.y[8,s])/(sol.t[-1]-sol.t[s])
+    power=(ydata[8,-1])/(tdata[-1])
     print("Mean absorbed power: "+str((power/1000).round(2))+" kW")
     
     
@@ -313,40 +348,42 @@ def decay_test(x0, n, t, ctrl):
         return start_simu(time=t2,wave=y,name=n, t0=0, init=x0, control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*A**2*p)    
     return start_simu(time=t2,wave=y,name=n, t0=0, init=[x0, 0, 0], control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*A**2*p)
 
-
-# Regular wave (Height, period, name, control)
-def reg_wave(H,p,n,ctrl):
+ 
+# Regular wave (Height, period)
+def reg_wave(H=1,p=10,n0=8,n=8):
     print("Regular wave")
+    w=wave_series();
     H=float(H);
-    p=float(p);
-    t0=np.max([p*8,0]);#4
-    #if (p<6):
-    #    t0=p*5;
-    t2=np.max([t0+p*8,0]);#6
-    #if (t2<20):
-    #    t2=10*p;
-    t=np.arange(0,t2,1/(omega_cut_off*np.pi))
-    y=H/2*np.cos(2*np.pi/p*t)
-    return start_simu(time=t,wave=y,name=n, t0=t0, control=ctrl )#/(9.81*9.81*1000/(32*np.pi)*H**2*p)
-
+    p0=abs(float(p));
+    t0=p0*n0;
+    t2=t0+p0*n;
+    w.t=np.arange(0,t2,1/(omega_cut_off*np.pi))
+    w.y=H/2*np.cos(2*np.pi/p0*w.t)
+    w.t0=t0;
+    w.te=t2-p0;
+    if float(p)>0:
+        w.t0=0;
+    return w;
 
 # Brettschneider wave (significant wave height, energy period, name, control)
-def bretschneider_wave(Hs,p,n,ctrl):
+def bretschneider_wave(Hs=1,p=6,n0=4,n=6):
     print("Brettschneider wave")
+    w=wave_series();
     Hs=float(Hs);
-    p=float(p);
+    p0=abs(float(p));
     omega=np.linspace(0.001,4,200);
-    omega_m=2*np.pi/(p/0.856);
+    omega_m=2*np.pi/(p0/0.856);
     S=5/16*(omega_m**4)/(omega**5)*(Hs**2)*np.exp(-5*(omega_m**4)/4/(omega**4))
-    t0=np.max([p*3,120]);
-    t2=np.max([t0+p*6]);
-    t=np.arange(0,t2,1/(omega_cut_off*np.pi))
-    np.random.seed(6)#Maybe replace by fixed phase vector; has to guaranteed that rnadom sequecne is always the same
+    t0=p0*n0;
+    t2=t0+p0*n;
+    w.t=np.arange(0,t2,1/(omega_cut_off*np.pi))
+    np.random.seed(6)#Maybe replace by fixed phase vector; has to guaranteed that random sequecne is always the same
     phase=np.random.rand(omega.size)*2*np.pi;
-    y=np.sum(np.sqrt(2*S*(omega[1]-omega[0]))*np.sin(omega*t.reshape(t.size,1)+phase),1)
-    
-        
-    return start_simu(time=t,wave=y,name=n, t0=t0, control=ctrl )
+    w.te=t2-p0;
+    if float(p)>0:
+        w.t0=0;
+    w.y=np.sum(np.sqrt(2*S*(omega[1]-omega[0]))*np.sin(omega*w.t.reshape(w.t.size,1)+phase),1)
+    return w;
 
 def get_WEC_data():
     f = open(utils.wec_dir+"/floater.txt",'r')
@@ -371,7 +408,10 @@ if __name__=="__main__":
     #reg_wave(4,3.5,"test.csv","Controller1.py");
     #reg_wave(1,10,"test.csv","controller_reactive.py")
     #decay_test(0.15,"decay1.csv",20,"linear")
-    reg_wave(1,80,"output.csv","linear")
+    #start_simu(wave=reg_wave(1,3),name="output.csv",control="linear")
+    bretschneider_wave(1,3).to_file("testwave1.csv")
+    #start_simu(wave=bretschneider_wave(1,3),name="output.csv",control="linear")
+    start_simu(file="testwave1.csv",name="output.csv",control="linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
    

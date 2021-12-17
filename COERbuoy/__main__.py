@@ -35,10 +35,10 @@ parser.add_argument("--GUI", action='store_true',
 args=parser.parse_args()
 if args.regular_wave != None:
     a=args.regular_wave;
-    reg_wave(float(a[0]),float(a[1]),a[2],a[3])
+    start_simu(wave=reg_wave(float(a[0]),float(a[1])),name=a[2],control=a[3])
 elif args.bretschneider_wave != None:
     a=args.bretschneider_wave;
-    bretschneider_wave(float(a[0]),float(a[1]),a[2],a[3])
+    start_simu(wave=bretschneider_wave(float(a[0]),float(a[1])),name=a[2],control=a[3])
 elif args.decay != None:
     a=args.decay;
     x=list(map(float,a[0][1:-1].replace(","," ").replace("  "," ").split()));
