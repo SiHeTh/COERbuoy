@@ -12,6 +12,7 @@
 # Dependencies
 import numpy as np;
 import json;
+import re;
 import warnings;
 import COERbuoy.utils as utils;
 from COERbuoy import connection;
@@ -33,11 +34,13 @@ class wave_series:#power is measured starting from t=0
     y=[];
     t0=0;
     te=0;
-    def __init__(self,t,y):
+    name="";
+    def __init__(self,t,y,n="wave"):
         self.t=t;
         self.y=y;
         self.t0=np.min([t[0],0]);
         self.te=t[-1];
+        self.name=n;
         if t[-2]>t[-1]:
             self.t=t[:-1];
             self.y=y[:-1];
@@ -45,12 +48,12 @@ class wave_series:#power is measured starting from t=0
         self.te=self.te-self.t0;
        
     @classmethod
-    def fromLists (cls,t,y):
-        return cls(t,y);
+    def fromLists (cls,t,y,n=""):
+        return cls(t,y,n);
     @classmethod
     def fromFile (cls,filename):
         a=np.array(pandas.read_csv(filename));#"TestFull.csv", header=None))
-        return cls(a[:,0],a[:,1])
+        return cls(a[:,0],a[:,1],filename)
     def to_file(self,name):
         pandas.DataFrame(np.vstack((self.t+self.t0,self.y)).transpose(),columns=["time","wave-elevation"]).round(6).to_csv(name,index=False)
        
@@ -86,10 +89,7 @@ def start_simu (**kwargs):
     spec.loader.exec_module(dyn_wec);
     
     print("Using the following WEC: "+utils.wec_dir);
-    #Set filename    
-    filename="output.csv"
-    if "name" in kwargs:
-        filename=kwargs["name"];
+
     #Floater.idname=filename;
     
     wec=dyn_wec.WEC();
@@ -185,7 +185,11 @@ def start_simu (**kwargs):
     omega_cut_off=wec.omega_cut_off;
     # Setting the wave (processed in a seperate module)
     wave1=wavefield.wavefield.set_wave(wavedata.y,wavedata.t,omega_cut_off);
+        #Set filename    
     
+    filename=wavedata.name.replace("_","")+"_p_"+f'{wave1.get_period():.2f}'+"_h_"+f'{wave1.get_height():.2f}'+"_"+re.split("[\\,/,\s]",kwargs.get("control","linear").replace("_","").replace(".",""))[-1]+"_"+re.split("[\\,/,.,-,\s]",utils.wec_dir.replace("_",""))[-1]+"_"+utils.class_hydro.replace("_","")+".csv";
+    if "name" in kwargs:
+        filename=kwargs["name"];
     # Calculating buoy data
     wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,300,0);
     # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
@@ -367,7 +371,7 @@ def reg_wave(H=1,p=10,n0=8,n=8):
     t2=p*n;
     t=np.arange(t0,t2,1/(omega_cut_off*np.pi))
     y=H/2*np.cos(2*np.pi/p*(t-t0))
-    return wave_series.fromLists(np.append(t,[t2-p]),np.append(y,[0]));
+    return wave_series.fromLists(np.append(t,[t2-p]),np.append(y,[0]),"regular");
 
 # Brettschneider wave (significant wave height, energy period, name, control)
 def bretschneider_wave(Hs=1,p=6,n0=4,n=6):
@@ -383,22 +387,13 @@ def bretschneider_wave(Hs=1,p=6,n0=4,n=6):
     np.random.seed(6)#Maybe replace by fixed phase vector; has to guaranteed that random sequecne is always the same
     phase=np.random.rand(omega.size)*2*np.pi;
     y=np.sum(np.sqrt(2*S*(omega[1]-omega[0]))*np.sin(omega*t.reshape(t.size,1)+phase),1)
-    return wave_series.fromLists(np.append(t,[t2-p]),np.append(y,[0]));
+    return wave_series.fromLists(np.append(t,[t2-p]),np.append(y,[0]),"bretschneider");
 
 def get_WEC_data():
     f = open(utils.wec_dir+"/floater.txt",'r')
     data=json.load(f);
     f.close();
     return data; 
-    
-def quartil (a, p):
-    a=np.abs(a);
-    b=np.sort(a);
-    aa=np.sum(a);
-    if (aa==0):
-        return 0;
-    return b[np.argmax(np.cumsum(b)/aa>p)];
-
 
 if __name__=="__main__":
         
@@ -410,7 +405,7 @@ if __name__=="__main__":
     #decay_test(0.15,"decay1.csv",20,"linear")
     #start_simu(wave=reg_wave(1,3),name="output.csv",control="linear")
     #bretschneider_wave(1,3).to_file("testwave1.csv")
-    start_simu(wave=reg_wave(1,3),name="output.csv",control="linear")
+    start_simu(wave=reg_wave(1,3),control="none")
     #start_simu(file="testwave1.csv",name="output.csv",control="linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
