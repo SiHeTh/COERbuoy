@@ -109,6 +109,12 @@ class wavefield:
       self.phase=p;
       self.omega=omega;
       self.xi=omega*omega/self.g;
+      
+    def get_period(self):
+        return 6.28/self.omega[np.argmax(self.A)];
+    
+    def get_height(self):
+        return sum(self.A*self.omega[1]-self.omega[0])/4;
     
     #add the radiation wave caused by a current impulse #surge
     def add_diracWave(self,A,t0,bc):
