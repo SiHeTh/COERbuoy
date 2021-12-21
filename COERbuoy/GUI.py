@@ -35,13 +35,23 @@ def threadfkt():
     #busy=True;
     while len(jobs)>idx:
         job=jobs[idx];
+        job["status"] = "Running";
         if job["status"] != "Done":
-            jobs[idx]["status"]="Running";
             print("Started job "+job["name"])
-            jobs[idx]["power"]=fktdict[job["fkt"]](*job["args"])
+            if job["fkt"]== "regular_wave":
+                [a,b,c]=start_simu(wave=reg_wave(job["H"],job["P"]),name="results",control=job["ctrl"]);
+            elif job["fkt"]== "bretschneider_wave":
+                [a,b,c]=start_simu(wave=bretschneider_wave(job["H"],job["P"]),name="results",control=job["ctrl"]);
+            elif job["fkt"]=="decay_test":
+                [a,b,c]=decay_test(job["x0"],job["name"],job["t"],job["ctrl"]);
+            job["name"]=b;
+            job["power"]=c;
             jobs[idx]["status"]="Done";
             print("Finished job "+job["name"])#+"; Absorbed: "+str(jobs[jobidx]["status"])+" %")
-            copyfile(os.path.join(COERbuoy.utils.pkg_dir,job["name"]),os.path.join(COERbuoy.utils.user_dir,job["name"]))
+            try:
+                copyfile(os.path.join(COERbuoy.utils.pkg_dir,job["name"]),os.path.join(COERbuoy.utils.user_dir,job["name"]))
+            except(FileNotFoundError):
+                print("COERbuoy_data/results does not exist!")
         idx=idx+1;
     busy=False;
     print("Work done!")
@@ -283,9 +293,9 @@ class GUIServer(BaseHTTPRequestHandler):
                             desc=strdata+". Using "+data1["ctrl"]+".";
                             print("Created job for "+desc+".")
                             if data["wave"]!="decay_test":
-                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["H"]), float(data["P"]), os.path.join(COERbuoy.utils.pkg_dir,name), data1["ctrl"]), "name":name, "id":len(jobs)};
+                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "H":float(data["H"]), "P":float(data["P"]), "name":os.path.join(COERbuoy.utils.pkg_dir,name), "ctrl":data1["ctrl"], "name":name, "id":len(jobs)};
                             else:
-                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "args":(float(data["x0"]), os.path.join(COERbuoy.utils.pkg_dir,name), float(data["t"]), data1["ctrl"]), "name":name, "id":len(jobs)};
+                                job={"fkt":data["wave"], "power":0, "status":"Not running","desc":desc, "x0":float(data["x0"]), "name":os.path.join(COERbuoy.utils.pkg_dir,name), "t":float(data["t"]), "ctrl":data1["ctrl"], "name":name, "id":len(jobs)};
                             
                             jobs.append(job);
                 busy=True;
