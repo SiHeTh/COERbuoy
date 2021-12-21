@@ -105,38 +105,42 @@ def start_simu (**kwargs):
     # "linear": A constant velocity damping is applied; The external control interface is not used; Implemented for debugging/testing
     # "none": No control/damping is applied
     # [string]: String specifying control command (f.ex.: "python3 MBC.py"), a TCP/IP socket is opened and the control program started as a subprocess
+    ctrlname=kwargs["control"];
     if "control" in kwargs:
         if kwargs["control"]=="TCP":
             interface=True;
-        elif kwargs["control"]=="linear":
-            interface=False;
-            damping=0;
-        elif kwargs["control"]=="none":
+        elif kwargs["control"]=="" or kwargs["control"]=="linear" or kwargs["control"]=="none":
             interface=False;
             damping=0;
         elif kwargs["control"]!="":
-            ctrl0=kwargs["control"].split(" ");
-            ctrlcmd=="";
-            if len(ctrl0)>1: #ctrl command already provided
-                ctrlcmd=ctrl0[0];
-                ctrl=utils.get_controller(ctrl0[1]);
+            ctrl0=kwargs["control"].split(".",1);
+            extension=ctrl0[1].split(" ")[0];
+            args=ctrl0[0].split(" ")[1:];
+            ctrlcmd=ctrl0[0].split(" ");
+            ctrlname=ctrlcmd[-1]+"."+extension;
+            try:
+                fullpath=utils.get_controller(ctrlname);
+            except:
+                fullpath=ctrlname;
+            
+            if len(ctrlcmd)>1: #ctrl command already provided
+                ctrl=kwargs["control"].replace(ctrlname,fullpath).split(" ");
     
-            if len(ctrl0)==1: #get control command from extension
-                ctrl=utils.get_controller(ctrl0[0]);
-                ext=ctrl0[0].split(".")
-                if len(ext)>1: #check if there is file extension at all
-                    ext=ext[-1];
-                    ctrlcmd=utils.cmddict.get(ext,"");
+            if len(ctrlcmd)==1: #get control command from extension
+                ctrlcmd=utils.cmddict.get(extension,"");
+                ctrl=[ctrlcmd]+kwargs["control"].replace(ctrlname,fullpath).split(" ");
+                if ctrlcmd=="":
+                    ctrl=kwargs["control"].replace(ctrlname,fullpath).split(" ");
                 
             if not host:
-                if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
-                    print("Start "+ctrl)
-                    process=subprocess.Popen(ctrl)
-                    ctrl="";
-                else:
-                    print("Start "+ctrl[0]+" "+ctrl[1])
-                    process=subprocess.Popen([ctrlcmd,ctrl])
-                    ctrl="";
+                #if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
+                print("Start "+str(" ".join(ctrl)))
+                process=subprocess.Popen(ctrl)
+                ctrl="";
+                #else:
+                #    print("Start "+ctrl[0]+" "+ctrl[1])
+                #    process=subprocess.Popen(ctrlcmd)
+                #    ctrl="";
             time.sleep(2);
             interface=True;
     teval=0;
@@ -157,7 +161,7 @@ def start_simu (**kwargs):
         
     # Wave data (wave elevation y over time t)...
     if "time" in kwargs and "wave" in kwargs:
-        wavedata.fromList(kwargs["time"],kwargs["wave"])
+        wavedata=wave_series.fromLists(kwargs["time"],kwargs["wave"])
         
     # ... get a wave series object directly ...
     elif "wave" in kwargs:
@@ -187,9 +191,12 @@ def start_simu (**kwargs):
     wave1=wavefield.wavefield.set_wave(wavedata.y,wavedata.t,omega_cut_off);
         #Set filename    
     
-    filename=wavedata.name.replace("_","")+"_p_"+f'{wave1.get_period():.2f}'+"_h_"+f'{wave1.get_height():.2f}'+"_"+re.split("[\\,/,\s]",kwargs.get("control","linear").replace("_","").replace(".",""))[-1]+"_"+re.split("[\\,/,.,-,\s]",utils.wec_dir.replace("_",""))[-1]+"_"+utils.class_hydro.replace("_","")+".csv";
+    filename=wavedata.name.replace("_","")+"_p_"+f'{wave1.get_period():.2f}'+"_h_"+f'{wave1.get_height():.2f}'+"_"+re.split("[\\,/,\s]",ctrlname.replace("_","").replace(".",""))[-1]+"_"+re.split("[\\,/,.,-,\s]",utils.wec_dir.replace("_",""))[-1]+"_"+utils.class_hydro.replace("_","")+".csv";
     if "name" in kwargs:
-        filename=kwargs["name"];
+        if os.path.isdir(kwargs["name"]):
+            filename=os.path.join(kwargs["name"],filename);
+        else:
+            filename=kwargs["name"];
     # Calculating buoy data
     wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,300,0);
     # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
@@ -301,14 +308,14 @@ def start_simu (**kwargs):
         print("Using control interface with ip "+conn_ctrl.ip+" at port " + str(conn_ctrl.port) +".")
         if host:
             if (ctrl!=""):
-                if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
-                    print("Start "+ctrl)
-                    process=subprocess.Popen(ctrl)
-                    ctrl="";
-                else:
-                    print("Start "+ctrlcmd+" "+ctrl)
-                    process=subprocess.Popen([ctrlcmd,ctrl])
-                    ctrl="";
+                #if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
+                print("Start "+str(" ".join(ctrl)))
+                process=subprocess.Popen(ctrl)
+                ctrl="";
+                #else:
+                #    print("Start "+ctrlcmd+" "+ctrl)
+                #    process=subprocess.Popen([ctrlcmd,ctrl])
+                #    ctrl="";
             conn_ctrl.openH();
         else:
             conn_ctrl.openC();
@@ -351,7 +358,7 @@ def start_simu (**kwargs):
         time.sleep(5);
         
     # return the generated electrical energy    
-    return power.round(2);
+    return [sol,filename,power.round(2)];
 
 # Decay test (Init state, name, duration, control)
 def decay_test(x0, n, t, ctrl):
@@ -403,9 +410,9 @@ if __name__=="__main__":
     #reg_wave(4,3.5,"test.csv","Controller1.py");
     #reg_wave(1,10,"test.csv","controller_reactive.py")
     #decay_test(0.15,"decay1.csv",20,"linear")
-    #start_simu(wave=reg_wave(1,3),name="output.csv",control="linear")
+    start_simu(wave=reg_wave(1,3),name="output.csv",control="linear")
     #bretschneider_wave(1,3).to_file("testwave1.csv")
-    start_simu(wave=reg_wave(1,3),control="none")
+    #start_simu(wave=reg_wave(1,5),control="controller_damping.py 5")
     #start_simu(file="testwave1.csv",name="output.csv",control="linear")
     #bretschneider_wave(1.5,12,"bretschneider_wave.csv","python3 controller.py")
      
