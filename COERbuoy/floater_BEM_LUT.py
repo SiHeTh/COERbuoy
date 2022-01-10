@@ -28,9 +28,9 @@ class Floater_BEM(Floater):
     BEMrad=np.array([[],[]]);
     BEMam=np.array([[],[]]);
     rad_set=False;
-    rad_old=np.NaN;
+    rad_old=None;
     p_old=np.NaN;
-    t_old=0;
+    t_old=-0.01;
     
     def __init__ (self, xi, g, depth, CoG, *args):
         super().__init__(xi, g, depth, CoG, *args);
@@ -50,7 +50,7 @@ class Floater_BEM(Floater):
             return [fb,en,np.array([en,en,en]),[0,0,0]]
         
         draft=eta+z0;#current submergence
-        
+        #print(draft)
         res = LUT.get_fromLUT(draft,0);
         exc1 = res[0];
         #exc1 = res[0]*np.cos(res[1])+1j*res[0]*np.sin(res[1]);
@@ -70,32 +70,44 @@ class Floater_BEM(Floater):
         delta0=p[2];
         
         Awave=wave.get(t,x0);
-        eta=np.sum(Awave[0]);
+        eta=np.sum(np.real(Awave[0]));
         
         res=self.Calculate(z0, x0, 0*delta0, eta);#Calculate coefficents
-        
+        dam=np.array([0,0,0]);#(np.array(res[3])-np.array(self.Calculate(z0+0.01, x0, 0*delta0, eta)[3]))/0.01;#Calculate coefficents
+        if self.rad_old is None:
+            self.rad_old=np.real(res[2])/[np.array(res[1]),np.array(res[1]),np.array(res[1])];
         ret=[0,0,0];#return array
+        def m(a,b):
+            return a.real*b.real+a.imag*b.imag;
+        #exc1 = np.conjugate(np.array(res[1]));#Exitation force
         exc1 = np.array(res[1]);#Exitation force
         am_omega = np.real(res[2]);#added mass over omega
         am1 = np.array(res[3]);#added mass @ inf
-            
-        am_omom=am_omega#*self.omega;
+        
+      
+        am_omom=am_omega/np.array([exc1,exc1,exc1]);#np.matmul(am_omega,vv)+np.diag((am_omega-self.rad_old)/np.max([t-self.t_old,1e-5]));
+        #print([v[1],np.sum(np.real(Awave[1]))])
         #Generate wave from movement
+        #print([np.sum(np.real(Awave[0])),np.sum(np.real(Awave[1]))])
         if (np.sum(np.abs(exc1))>0):
             #dx=v[1]*0.01;
             #res2=self.Calculate(z0, x0+dx, 0*delta0, eta);
-            r1=am_omom[1][1]/exc1[1]*(v[1]-np.sum(Awave[2]))+am_omom[0][1]/exc1[1]*(v[0]-np.sum(Awave[3]));
-            r2=am_omom[0][0]/exc1[0]*(v[0]+np.sum(Awave[3]))+am_omom[1][0]/exc1[0]*(v[1]-np.sum(Awave[2]));
+            r1=1*am_omom[1][1]*(v[1])+am_omom[0][1]*(v[0]);
+            r2=1*am_omom[0][0]*(v[0])+am_omom[1][0]*(v[1]);
+            #r1=1*am_omom[1][1];
+            #r2=1*am_omom[0][0]*(v[0]-np.sum(np.imag(Awave[1])))+am_omom[1][0]*(v[1]-np.sum(np.imag(Awave[1])));
             #print([v[1],np.sum(Awave[2])])
             
-            wave.add_diracWave(-2/np.pi*r1,t,True);
+            #wave.add_diracWave(-2/np.pi*(am_omom[1][1]*(v[1]-0*np.sum(Awave[2]))),t,True);
+            wave.add_diracWave(-2/np.pi*r1,t,True);#-0*((am_omega-self.rad_old)/np.max([t-self.t_old,1e-5]))[1][1],t,True);
             wave.add_diracWave2(-2/np.pi*r2,t,True);
-        
+            self.rad_old=am_omega/[exc1,exc1,exc1];
+            self.t_old=t;
         #Calculate hydro forces for each DOF
         for i in range(len(ret)):
-            FK=np.sum(np.real(exc1[i])*Awave[0]+np.imag(exc1[i])*Awave[1]);
+            FK=np.sum(m(exc1[i],Awave[0])).real;#np.sum(np.real(exc1[i])*np.real(Awave[0])+np.imag(exc1[i]*np.imag(Awave[0])));
             ret[i]=res[0][i]+FK;#buoyance + FK force
-        Frad=[np.real(np.sum(wave.get_rad2(t,x0)*exc1[0])),np.real(np.sum(wave.get_rad(t,x0)*exc1[1])),0];#radiation force
+        Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.abs(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*(exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
         
         self.t_old=t;
