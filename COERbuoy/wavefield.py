@@ -111,10 +111,10 @@ class wavefield:
       self.xi=omega*omega/self.g;
       
     def get_period(self):
-        return 6.28/self.omega[np.argmax(self.A)];
+        return 6.28/self.omega[np.argmax(np.abs(self.A))];
     
     def get_height(self):
-        return sum(self.A*self.omega[1]-self.omega[0])/4;
+        return sum(np.abs(self.A)+(0*self.omega[1]-0*self.omega[0]));
     
     #add the radiation wave caused by a current impulse #surge
     def add_diracWave(self,A,t0,bc):
@@ -188,13 +188,11 @@ class wavefield:
         
     #get the currrent surface elevation at time t and horizontal position x
     def get(self,t,x):
-        a=self.A*np.cos(self.omega*t+self.phase-self.xi*x);
-        b=self.A*np.sin(self.omega*t+self.phase-self.xi*x);
-        c=-self.A*self.omega*np.sin(self.omega*t+self.phase-self.xi*x);
-        d=-self.A*self.omega*np.cos(self.omega*t+self.phase-self.xi*x);
-        e=-self.A*self.omega**2*np.cos(self.omega*t+self.phase-self.xi*x);
-        f=-self.A*self.omega**2*np.sin(self.omega*t+self.phase-self.xi*x);
-        return[a,b,c,d,e,f];#wave_elevation, imag_wave_elevation, wave_speed, wave_speed_imag, wave_acceleration, wave_acceleration_imag
+        a=self.A*np.exp(1j*(self.omega*t+self.phase-self.xi*x))#np.cos(self.omega*t+self.phase-self.xi*x);
+        b=1j*self.omega*self.A*np.exp(1j*(self.omega*t+self.phase-self.xi*x))
+        c=1j*1j*self.omega*self.omega*self.A*np.exp(1j*(self.omega*t+self.phase-self.xi*x))
+       
+        return[a,b,c];#wave_elevation, imag_wave_elevation, wave_speed, wave_speed_imag, wave_acceleration, wave_acceleration_imag
         
     def clear(self):
         self.dw.clear();

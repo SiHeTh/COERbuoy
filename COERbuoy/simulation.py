@@ -195,6 +195,8 @@ def start_simu (**kwargs):
     if "name" in kwargs:
         if os.path.isdir(kwargs["name"]):
             filename=os.path.join(kwargs["name"],filename);
+        elif kwargs["name"]=="":
+            filename=filename;
         else:
             filename=kwargs["name"];
     # Calculating buoy data
@@ -259,8 +261,8 @@ def start_simu (**kwargs):
               msg_status=utils.msg_status;
               # Prepare message sent to controller
               msg={"time":tseq*msg_status[0],
-                   "wave":(np.sum(wave1.get(tseq.reshape(tseq.size,1),0)[0],1))*msg_status[1],
-                   "wave_forecast":(np.sum(wave1.get(2*t-np.flip(tseq.reshape(tseq.size,1)),0)[0],1))*msg_status[2],
+                   "wave":(np.sum(np.real(wave1.get(tseq.reshape(tseq.size,1),0)[0]),1))*msg_status[1],
+                   "wave_forecast":(np.sum(np.real(wave1.get(2*t-np.flip(tseq.reshape(tseq.size,1)),0)[0]),1))*msg_status[2],
                    ##Wave dependent on the position not time; can be used for visualisation
                    #"wave":(np.sum(wave1.get(t,np.linspace(60,0,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[1],
                    #"wave_forecast":(np.sum(wave1.get(t,np.linspace(0,-60,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[2],
@@ -301,7 +303,7 @@ def start_simu (**kwargs):
     dynamics.damping=damping;
     dynamics.PTOt=[0];
     dynamics.brake=[0];
-    dynamics.duration=wavedata.t[-1];
+    dynamics.duration=wavedata.te;
     dynamics.xlast=history([0]*(len(init_condition)+1));
     
     if interface:
@@ -330,7 +332,7 @@ def start_simu (**kwargs):
 
     
     # Write the solution of the data frame
-    pandas.DataFrame(np.array([sol.t[:],np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
+    pandas.DataFrame(np.array([sol.t[:],np.sum(np.real(wave1.get(sol.t.reshape(sol.t.size,1),0)[0]),1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
     
     
     #import matplotlib.pyplot as plt
