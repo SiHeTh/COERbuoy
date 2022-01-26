@@ -2,6 +2,7 @@
 ### A realistic Wave Enegery Converter model to evaluate controllers
 
 #### Fore more information, have a look at the [manual](https://github.com/SiHeTh/COERbuoy/raw/main/manual.pdf) ####
+#### Or see the basic_usage jupyter notebook. ####
 
 NOTE: The commands how to run python might differ between systems, and the ones presented here might not work on every machine. Please refer to https://www.python.org/ to find the correct commands for your system.
 <br>
