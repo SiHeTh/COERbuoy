@@ -36,7 +36,7 @@ def interpolate(x,y,o):
 LUT={};
     
 # Load look up table
-def load_LUT(omegatest, bem_dir):  
+def load_LUT(omegatest, bem_dir, file_rad="/results/RadiationCoefficients.tec", file_exc="/results/ExcitationForce.tec"):  
     global h_min, h_max, p_min, p_max, h_step, p_step;
     p_max=0;
     p_min=-0;
@@ -69,7 +69,7 @@ def load_LUT(omegatest, bem_dir):
                 #print("Reading data for heave h and pitch p");
                 
                 #Excitation force
-                b=np.array(pandas.read_csv(entry.path+"/results/ExcitationForce.tec",skiprows=5,header=None,delim_whitespace=True))#np.array(pandas.read_csv(entry.path+"/results/ExcitationForce.tec",header=4,delimiter="\s+"));
+                b=np.array(pandas.read_csv(entry.path+file_exc,skiprows=5,header=None,delim_whitespace=True))#np.array(pandas.read_csv(entry.path+"/results/ExcitationForce.tec",header=4,delimiter="\s+"));
                 omega=b[:,0];
                 fe_a=np.array([[0.0]*len(omegatest)]*3).copy();
                 fe_p=np.array([[0.0]*len(omegatest)]*3).copy();
@@ -90,7 +90,7 @@ def load_LUT(omegatest, bem_dir):
                 for i in np.arange(3):
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),delimiter="\s+"));
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",header=4+(1+len(omega))*i,nrows=len(omega),delimiter="\s+"));
-                    b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",skiprows=5+(1+len(omega))*i,nrows=len(omega),header=None,delim_whitespace=True))#,sep="\s+|,+",engine="python"));
+                    b=np.array(pandas.read_csv(entry.path+file_rad,skiprows=5+(1+len(omega))*i,nrows=len(omega),header=None,delim_whitespace=True))#,sep="\s+|,+",engine="python"));
                     #b=np.array(pandas.read_csv(entry.path+"/results/RadiationCoefficients.tec",nrows=len(omega),header=4+(1+len(omega))*i,sep="\s+|,+",engine="python"));
                     if np.isnan(b[0,0]):
                         b=b[:,1:];
