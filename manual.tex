@@ -5,6 +5,7 @@
 \usepackage{amssymb}
 \usepackage{listings}
 \usepackage{graphicx}
+\usepackage[table]{xcolor}
 \usepackage{tikz}
 \newcommand{\includeTIKZ}[2]{%  
 	\scalebox{#1}{\input{#2}}  }
@@ -133,8 +134,8 @@ The option available are listed in Table \ref{tab:params_model}
 	host&Host or client mode$^1$&True, False&True\\
 	\hline
 	name&Name of output file&\{filename\}&output.csv\\
-	\hline
-	t0&Transition time$^2$&\{t in s\}&0\\
+	\hline\rowcolor{lightgray}
+	t0&Transition time$^2$ (deprecated)&\{t in s\}&0\\
 	\hline
 	buoy\_file&Description of the WEC parameter&\{filename\}&floater.txt\\
 	\hline
@@ -142,7 +143,7 @@ The option available are listed in Table \ref{tab:params_model}
 		file&File with wave data&\{csv-file\}&-\\
 		time$^a$&Time for wave data&\{1xn list\}&linspace(0,200,1000)\\
 		\hline
-		wave$^a$&Wave data corresponding to time&\{1xn list\}&sin(linspace(0,200,1000))\\
+		wave$^a$&Wave data corresponding to time&wave\_series object&sin(linspace(0,200,1000))\\
 		\hline
 \end{tabular}
 \caption{The bracket \{\} indicates user defined input.\\$^a$Both fields, time and wave, must be specified in order to be used.\\$^b$ $\varsigma$ is the stroke position and $\alpha$ the pitch angle of the anchor joint, $\dot{\varsigma}$ and $\dot{\alpha}$ the corresponding time derivatives.\\
@@ -153,7 +154,38 @@ $^2$ time after which to start the energy measurement to exclude transitional ef
 There are several options to select a controller. By default a linear damping is applied, reading the damping value from the \textit{buoy\_file}. Alternative, a controller can be specified, the command must be the same as used when starting the controller program from the command line, for example "python3 Controller.py" for a controller written in python, or "octave ExtremiumSeeking.m" for a controller written in octave. By default controller run in client mode, to allow easy integration of MATLAB files, which, in the standard installation, provides only a tcp client interface. However, the default behaviour can be overwritten by setting the \textit{host} parameter.\\
 When a command is given, COERbuoy1 will open the controller as a separate thread and communicate with it via the TCP interface. To open the TCP interface only, the control parameter can be set to "TCP". Then the controller has to be started separately. The controller operating as client has to be started directly after COERbuoyOne; the controller operating as host must be started before the COERbuoy1 simulation; however, both have to be started timely after each other, as otherwise a time out may occur.
 \paragraph{Specifying the wave file}
-There are three option to set the wave: (1) By default a sinus wave is loaded, (2) a time and a corresponding wave data list can be specified, or (3) with the \textit{file} keyword a user specified wave data file can be used in the simulation. The data must be stored in the comma separated values file format (CSV):
+There are three option to set the wave: (1) By default a sinus wave is loaded, (2) using a wave\_series object (3) with the \textit{file} keyword a user specified wave data file can be used in the simulation.
+\paragraph{Definitions}
+By definition the COERbuoy tools start measuring at $t=0$, neagtiv values are not considered in the calculation of the absorbed poer ect., thus can be used to get rid of transient effects. The last time value of the time series indicates where the simulation stops; if the last value is smaller than the value ebfore, the simulation stops before the end of the wave is reached. by this effects from the windowing can be bypassed.
+\paragraph{Using the wave\_series object}
+The time\_series object is most easily created by the built in function reg\_wave and nretschneider\_wave, which have the same input parameters, see Table \ref{tab:params_waveseries}.
+\begin{figure}\label{tab:params_waveseries}
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline
+		name & reg\_wave / bretschneider\_wave & default values\\
+		\hline
+		H/Hs &wave height / significant wave height& 1 / 1 \\
+		\hline
+		p&wave period / wave energy period&6/10\\
+		\hline
+		n0&number of wave periods for $t<0$&8/4\\
+		\hline
+		n&number of wave periods for $t>0$&8/6\\
+		\hline
+		ne&number of wave periods not run&1\\
+		\hline
+	\end{tabular}
+	\caption{Paremeters for the functions reg\_wave and bretschneider\_wave.}
+\end{figure}
+The functions can than be used like:
+\begin{verbatim}
+start_simu(wave=reg_wave(3,8),control="linear", name="test_data");
+start_simu(wave=reg_wave(2,6,n0=1,ne=0),control="linear", name="test_data");
+start_simu(wave=bretschneider_wave(1,10),control="linear", name="test_data");
+\end{verbatim}
+\paragraph{csv-file}
+The data must be stored in the comma separated values file format (CSV):
 \begin{verbatim}
 0.000000,-1.072420,
 0.098821,-1.069751,
@@ -163,6 +195,7 @@ There are three option to set the wave: (1) By default a sinus wave is loaded, (
 0.494106,-0.984322,
 \end{verbatim}
 where the first column indicates the time and the second column the surface elevation at this time step.
+
 \subsection{COERbuoy(1) from the CLI}
 The COERbuoy platform can be used from the command-line/shell/terminal of the computer. To get an overview of the commands and the parameters, call the help function:
 \begin{verbatim}
