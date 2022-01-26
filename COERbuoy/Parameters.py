@@ -44,7 +44,7 @@ class parameters():
         self.omega=np.array(omega);
         xi=self.omega*self.omega/g;
         #Initialize WEC
-        self.wec.load_buoy(getattr(Floater,utils.class_hydro),xi,300,0);
+        self.wec.load_buoy(getattr(Floater,self.classhydro),xi,300,0);
         self.wec.load_param();
         self.floater=self.wec.buoy;
         

@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # COERbuoy1 WEC model
 # A realistic, nonlinear Wave Energy Converter model
-# 2020/2021 COER Laboratory, Maynooth University
+# 2020/2021/2022 COER laboratory, Maynooth University
 # in cooperation with CorPower Ocean AB
 #
 # Author:
@@ -23,13 +25,14 @@ from scipy.interpolate import interp1d;
 omega_cut_off=4;
 import os;
 pkg_dir=os.path.dirname(__file__);
+
 # Debugging feature
 debug=not True;
 
-class wave_series:#power is measured starting from t=0
-                  #The simulation runtime te is the last element of the time series
-                  #Unless the last element, the time series has to be monotonary increasing 
-                  #Having a runtime shorter than the wave length is recommended when windowing
+class wave_series():#power is measured starting from t=0
+                    #The simulation runtime te is the last element of the time series
+                    #Unless the last element, the time series has to be monotonary increasing 
+                    #Having a runtime shorter than the wave length is recommended when windowing
     t=[];
     y=[];
     t0=0;
@@ -55,7 +58,14 @@ class wave_series:#power is measured starting from t=0
         a=np.array(pandas.read_csv(filename));#"TestFull.csv", header=None))
         return cls(a[:,0],a[:,1],filename)
     def to_file(self,name):
-        pandas.DataFrame(np.vstack((self.t+self.t0,self.y)).transpose(),columns=["time","wave-elevation"]).round(6).to_csv(name,index=False)
+        t=self.t+self.t0;
+        y=self.y;
+        ye=np.where(np.array(self.t)>self.te*0.98)[0];
+        if len(ye) > 0:
+            ye=self.y[ye[0]];
+            t=np.hstack([t,[self.te+self.t0]]);
+            y=np.hstack([self.y,[ye]]);
+        pandas.DataFrame(np.vstack((t,y)).transpose(),columns=["time","wave-elevation"]).round(6).to_csv(name,index=False)
        
 # Main program
 def start_simu (**kwargs):
@@ -199,8 +209,9 @@ def start_simu (**kwargs):
             filename=filename;
         else:
             filename=kwargs["name"];
+    
     # Calculating buoy data
-    wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,300,0);
+    wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,3000000,0);
     # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
     steps=np.array(range(0,int(1/dt*wavedata.te)))*dt;
     
@@ -274,7 +285,6 @@ def start_simu (**kwargs):
                    "test":np.zeros(100)
                    
                    }
-              #print([msg["stroke_pos"][-1],x[0]])
               # Exchange data with controller
               data=conn_ctrl.exchange_model(msg["time"],msg["wave"],msg["wave_forecast"],msg["stroke_pos"],msg["stroke_speed"],msg["angular_pos"],msg["angular_speed"],msg["force"],msg["test"])
               
@@ -372,7 +382,7 @@ def decay_test(x0, n, t, ctrl):
 
  
 # Regular wave (Height, period)
-def reg_wave(H=1,p=10,n0=8,n=8):
+def reg_wave(H=1,p=10,n0=8,n=8,ne=1):
     print("Regular wave")
     H=float(H);
     p=float(p);
@@ -380,10 +390,10 @@ def reg_wave(H=1,p=10,n0=8,n=8):
     t2=p*n;
     t=np.arange(t0,t2,1/(omega_cut_off*np.pi))
     y=H/2*np.cos(2*np.pi/p*(t-t0))
-    return wave_series.fromLists(np.append(t,[t2-p]),np.append(y,[0]),"regular");
+    return wave_series.fromLists(np.append(t,[t2-ne*p]),np.append(y,y[-1]),"regular");
 
 # Brettschneider wave (significant wave height, energy period, name, control)
-def bretschneider_wave(Hs=1,p=6,n0=4,n=6):
+def bretschneider_wave(Hs=1,p=6,n0=4,n=6,ne=1):
     print("Brettschneider wave")
     Hs=float(Hs);
     p=float(p);
@@ -396,7 +406,7 @@ def bretschneider_wave(Hs=1,p=6,n0=4,n=6):
     np.random.seed(6)#Maybe replace by fixed phase vector; has to guaranteed that random sequecne is always the same
     phase=np.random.rand(omega.size)*2*np.pi;
     y=np.sum(np.sqrt(2*S*(omega[1]-omega[0]))*np.sin(omega*t.reshape(t.size,1)+phase),1)
-    return wave_series.fromLists(np.append(t,[t2-p]),np.append(y,[0]),"bretschneider");
+    return wave_series.fromLists(np.append(t,[t2-ne*p]),np.append(y,y[-1]),"bretschneider");
 
 def get_WEC_data():
     f = open(utils.wec_dir+"/floater.txt",'r')
@@ -407,12 +417,9 @@ def get_WEC_data():
 if __name__=="__main__":
         
     #Few examples how to run different tests:
-    t=np.linspace(0,10,100);
+    #t=np.linspace(0,10,100);
     #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
-    #reg_wave(4,3.5,"test.csv","Controller1.py");
-    #reg_wave(1,10,"test.csv","controller_reactive.py")
-    #decay_test(0.15,"decay1.csv",20,"linear")
-    start_simu(wave=reg_wave(1,3),name="output.csv",control="linear")
+    decay_test([1, 0, 0],"decay1.csv",20,"linear")
     #bretschneider_wave(1,3).to_file("testwave1.csv")
     #start_simu(wave=reg_wave(1,5),control="controller_damping.py 5")
     #start_simu(file="testwave1.csv",name="output.csv",control="linear")

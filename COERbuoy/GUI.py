@@ -38,17 +38,20 @@ def threadfkt():
         job["status"] = "Running";
         if job["status"] != "Done":
             print("Started job "+job["name"])
+            filename=os.path.join(COERbuoy.utils.pkg_dir,"results");
             if job["fkt"]== "regular_wave":
-                [a,b,c]=start_simu(wave=reg_wave(job["H"],job["P"]),name="results",control=job["ctrl"]);
+                [a,b,c]=start_simu(wave=reg_wave(job["H"],job["P"]),name=filename,control=job["ctrl"]);
             elif job["fkt"]== "bretschneider_wave":
-                [a,b,c]=start_simu(wave=bretschneider_wave(job["H"],job["P"]),name="results",control=job["ctrl"]);
+                [a,b,c]=start_simu(wave=bretschneider_wave(job["H"],job["P"]),name=filename,control=job["ctrl"]);
             elif job["fkt"]=="decay_test":
                 [a,b,c]=decay_test(job["x0"],job["name"],job["t"],job["ctrl"]);
-            job["name"]=b;
+            job["name"]=os.path.join("results",os.path.basename(b));
+            print(b)
             job["power"]=c;
             jobs[idx]["status"]="Done";
             print("Finished job "+job["name"])#+"; Absorbed: "+str(jobs[jobidx]["status"])+" %")
             try:
+                #copyfile(os.path.join(COERbuoy.utils.pkg_dir,job["name"]),os.path.join(COERbuoy.utils.user_dir,job["name"]))
                 copyfile(os.path.join(COERbuoy.utils.pkg_dir,job["name"]),os.path.join(COERbuoy.utils.user_dir,job["name"]))
             except(FileNotFoundError):
                 print("COERbuoy_data/results does not exist!")
@@ -115,6 +118,7 @@ class GUIServer(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
         if p[0][-3:]=="csv":
+            print([COERbuoy.utils.pkg_dir,p[0][1:]])
             if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,p[0][1:])):
                 print("delivering "+p[0][1:])
                 f = open(os.path.join(COERbuoy.utils.pkg_dir,p[0][1:]),'r');
@@ -132,6 +136,7 @@ class GUIServer(BaseHTTPRequestHandler):
                 #self.wfile.write(bytes(f.read(),"utf-8"))
                 #f.close();
         elif self.path[-3:]=="csv":
+            print([COERbuoy.utils.pkg_dir,self.path[1:],"+s"])
             if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,self.path[1:])):
                 print("delivering "+self.path[1:]);
                 f = open(os.path.join(COERbuoy.utils.pkg_dir,self.path[1:]),'r');
