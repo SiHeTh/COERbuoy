@@ -158,10 +158,10 @@ def run():
     pandas.DataFrame(np.vstack((zs,Fstat[1],floater_slider_spring,Fstat[1]+floater_slider_spring)).transpose(),columns=["z-offset","c_hydrostatic","c_spring","resulting"]).round(2).to_csv(folder+"Stiffness.csv",index=False)
         
     for o in omega:
-        omega2.append("&omega;="+str(o.round(2))+" rad/m");
+        omega2.append("\u03C9="+str(o.round(2))+" rad/m");
     
     omega8=omega2.copy();
-    omega8.append("&omega;=inf");
+    omega8.append("\u03C9=inf");
  
     for mode in [0,1,2]:
         folder=folder0+mod_name[mode];
