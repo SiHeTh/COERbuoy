@@ -1,9 +1,6 @@
 Basic moment domain controller
 
-This is a basic moment based controller for the COERbuoy platform, see [1].
-Due to license reason (COERbuoy is licensed under BSD-3 clause license, and
-can not include libraries under the GPL license), the CVXOPT library has to
-be installed seperatly (pip install cvxopt) and uncommented in line 20.
+This is a self-parametrising, one degree-of-freedom, linear receeding-horizon moment based controller for the COERbuoy platform with stroke limit, see [1].
 
 To use it in COERbuoy there are several option:
 
