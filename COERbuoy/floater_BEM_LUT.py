@@ -3,7 +3,7 @@
 # Floater_BEM_LUT.py - Calculating hydrostatic- and dyanmic forces based on BEM data
 # Initally designed to handle three degree of freedom (3D) heave, surge and sway, but only two
 # (heave, surge) are used.
-# 2020/2021 COER Laboratory, Maynooth University
+# 2020/2021/2022 COER Laboratory, Maynooth University
 # in cooperation with CorPower Ocean AB
 #
 # Author:
@@ -36,13 +36,13 @@ class Floater_BEM(Floater):
         super().__init__(xi, g, depth, CoG, *args);
         LUT.load_LUT(np.sqrt(xi*9.81),os.path.join(os.path.dirname(args[0]),"BEM"));
         
-    #calculate hydrodnymaic parmeters from heave, surge, pitch, surface elevation
+    #calculate hydrodynamic parmeters from heave, surge, pitch, surface elevation
     def Calculate(self, z0, x0, delta0, eta):
         fb=np.array([0,0,0]);
         
         z0=-z0;
         
-        #Get buyoancy force for each element
+        #Get buoyancy force for each element
         for e in self.elements:
             fb = fb + e.Calculate(z0, x0, delta0, eta)[0];
         if np.sum(np.abs(fb))==0:#out of water
@@ -50,12 +50,9 @@ class Floater_BEM(Floater):
             return [fb,en,np.array([en,en,en]),[0,0,0]]
         
         draft=eta+z0;#current submergence
-        #print(draft)
         res = LUT.get_fromLUT(draft,0);
-        exc1 = res[0];
-        #exc1 = res[0]*np.cos(res[1])+1j*res[0]*np.sin(res[1]);
-        exc1 = res[0]*np.exp(1j*res[1]);
-
+        exc1 = res[0]*np.cos(res[1])+1j*res[0]*np.sin(res[1]);
+       
         rad1 = [[res[3][0][0]+1j*res[2][0][0],res[3][0][1]+1j*res[2][0][1],res[3][0][2]+1j*res[2][0][2]],
                 [res[3][1][0]+1j*res[2][1][0],res[3][1][1]+1j*res[2][1][1],res[3][1][2]+1j*res[2][1][2]],
                 [res[3][2][0]+1j*res[2][2][0],res[3][2][1]+1j*res[2][2][1],res[3][2][2]+1j*res[2][2][2]]];
@@ -73,45 +70,46 @@ class Floater_BEM(Floater):
         eta=np.sum(np.real(Awave[0]));
         
         res=self.Calculate(z0, x0, 0*delta0, eta);#Calculate coefficents
-        dam=np.array([0,0,0]);#(np.array(res[3])-np.array(self.Calculate(z0+0.01, x0, 0*delta0, eta)[3]))/0.01;#Calculate coefficents
-        if self.rad_old is None:
-            self.rad_old=np.real(res[2])/[np.array(res[1]),np.array(res[1]),np.array(res[1])];
+        dam=np.array([0,0,0]);
         ret=[0,0,0];#return array
         def m(a,b):
             return a.real*b.real+a.imag*b.imag;
-        #exc1 = np.conjugate(np.array(res[1]));#Exitation force
+        
         exc1 = np.array(res[1]);#Exitation force
-        am_omega = np.real(res[2]);#added mass over omega
+        rad1 = np.real(res[2]);#Radiation coefficents
         am1 = np.array(res[3]);#added mass @ inf
         
       
-        am_omom=am_omega/np.array([exc1,exc1,exc1]);#np.matmul(am_omega,vv)+np.diag((am_omega-self.rad_old)/np.max([t-self.t_old,1e-5]));
-        #print([v[1],np.sum(np.real(Awave[1]))])
         #Generate wave from movement
-        #print([np.sum(np.real(Awave[0])),np.sum(np.real(Awave[1]))])
         if (np.sum(np.abs(exc1))>0):
-            #dx=v[1]*0.01;
-            #res2=self.Calculate(z0, x0+dx, 0*delta0, eta);
-            r1=1*am_omom[1][1]*(v[1])+am_omom[0][1]*(v[0]);
-            r2=1*am_omom[0][0]*(v[0])+am_omom[1][0]*(v[1]);
-            #r1=1*am_omom[1][1];
-            #r2=1*am_omom[0][0]*(v[0]-np.sum(np.imag(Awave[1])))+am_omom[1][0]*(v[1]-np.sum(np.imag(Awave[1])));
-            #print([v[1],np.sum(Awave[2])])
+            c_1=2*3.14*(self.omega*self.omega*self.omega/self.g)/(4*pi*self.g**2*self.rho*1);
+            r0=(c_1*exc1[0].real+1j*c_1*exc1[0].imag)*v[1];#Using Hashkind to get radiation (numerically best solution)
+            r1=(c_1*exc1[0].real+1j*c_1*exc1[1].imag)*v[1];
+            #axisymetric devcies do not really have cross terms for radiation
             
-            #wave.add_diracWave(-2/np.pi*(am_omom[1][1]*(v[1]-0*np.sum(Awave[2]))),t,True);
-            wave.add_diracWave(-2/np.pi*r1,t,True);#-0*((am_omega-self.rad_old)/np.max([t-self.t_old,1e-5]))[1][1],t,True);
-            wave.add_diracWave2(-2/np.pi*r2,t,True);
-            self.rad_old=am_omega/[exc1,exc1,exc1];
-            self.t_old=t;
+            wave.add_diracWave(-2/np.pi*r0,t,True);
+            wave.add_diracWave2(-2/np.pi*r1,t,True);
+            
         #Calculate hydro forces for each DOF
+        dP=0;
+        FK=0;
         for i in range(len(ret)):
-            FK=np.sum(m(exc1[i],Awave[0])).real;#np.sum(np.real(exc1[i])*np.real(Awave[0])+np.imag(exc1[i]*np.imag(Awave[0])));
+            FK=np.sum(m(np.conjugate(exc1[i]),Awave[0])).real;#np.sum(np.real(exc1[i])*np.real(Awave[0])+np.imag(exc1[i]*np.imag(Awave[0])));
             ret[i]=res[0][i]+FK;#buoyance + FK force
-        Frad=[np.real(np.sum(wave.get_rad2(t,x0)*np.abs(exc1[0]))),np.real(np.sum(wave.get_rad(t,x0)*(exc1[1]))),0];#radiation force
+            
+            if i==1:#added mass only implemented for heave
+                v=v[i];
+                if abs(v) > 0:
+                    dP=(am1[i]-self.Calculate(z0+v/abs(v)*0.01,x0,0*delta0,eta)[3][i])/0.01*v;
+                    ret[i]=ret[i]+dP;
+                if self.file and (t-self.t_old)>0.09:
+                    self.file.write(str(t)+","+str(eta)+","+str(abs(res[0][1]))+","+str(abs(FK))+","+str(abs(np.real(np.sum(m(wave.get_rad(t,x0),exc1[1])))))+","+str(abs(dP))+"\r\n");
+                    self.t_old=t;
+                
+        Frad=[np.real(np.sum(wave.get_rad(t,x0)*(exc1[0]))),np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
+            
         
-        self.t_old=t;
-        self.rad_old=am_omega;
         self.z0_old=z0;
             
         return [np.real(ret),[am1[0],am1[1],am1[2]]];#hydro force, added mass @ inf

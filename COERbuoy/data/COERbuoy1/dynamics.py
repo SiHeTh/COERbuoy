@@ -173,18 +173,18 @@ class WEC():
             
         p=E**2/(F_pto*dx)*0.5;
         q=X**2;
+        #p=(self.gen_clambda*dx)**2*dx*0.5;
+        #q=F_pto*(self.gen_cL*dx)**2/((self.gen_clambda*dx)**2*dx)
         R=self.gen_Rc;
-        #print([F_pto*dx,p**2-q])
+        
+        #calculate the required resistance
         if (p**2-q>0):
             R=-(p+np.sqrt(p**2-q))
-            #print([0-1,(E/np.sqrt(R**2+X**2))**2*R,F_pto*dx])
-            #print([0-1,((E/np.sqrt(R**2+X**2))**2*R)/(F_pto*dx)])
         else:
             R=np.sqrt(q);#The requested damping force is above the limits
-            #print([0-2,(E/np.sqrt(R**2+X**2))**2*R,(F_pto*dx)])
         R=R;
         
-        #in generator mode the minium damping is limited by the internal resitstance
+        #in generator mode the minium damping is limited by the internal resistance
         if F_pto*dx<0 and R>0 and R<self.gen_Rc:
             R=self.gen_Rc;#otherwise we need to put energy into the system
         Rl=R-self.gen_Rc*E/np.abs(E);
@@ -194,19 +194,15 @@ class WEC():
         I=E/np.sqrt(R**2+X**2);
         
         gamma=np.abs(self.gen_I_lim/I);
-        #print(I);
         if gamma < 1:
             D=2/np.pi*(np.arctan(gamma/np.sqrt(1-gamma))+gamma*np.sqrt(1-gamma**2));
-            #print(X)
-            #print(D)
             X=(self.gen_cL*(1+(1-D)))*dx;
-            #print("over")
-            #print(X)
             I=E/np.sqrt(R**2+X**2);
         
         Pabs=-Rl*I**2;#print([E,R,Rl])
+        #print(np.round(dx),np.round(-E**2*R/(R**2+X**2)*1/(dx)),np.round(F_pto,1))
+        #return [-E**2*R/(R**2+X**2)*1/(dx), Pabs];
         return [-E**2*R/(R**2+X**2)*1/(dx), Pabs];
-      
     #main calculation function, called by ODE solver from main programm
     def Calc(self,t,wave,x,PTO_force,brake,ulast):
       #State vector:

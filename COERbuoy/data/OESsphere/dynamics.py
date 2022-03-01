@@ -24,7 +24,10 @@ class WEC():
     amlow_old=0;
     v_old=0;
     t_old=-0.0001;
-    file=os.path.join(utils.wec_dir,"floater.txt");
+    try:
+        file=os.path.join(utils.wec_dir,"floater.txt");
+    except(AttributeError): #if directory is not set in utils, use own directory
+        file=os.path.join(os.path.dirname(__file__),"floater.txt");
     acc=0;
     def __init__(self):
         self.force_sensor=0;
@@ -78,33 +81,33 @@ class WEC():
       #F_FKS_h=F_FKS[0][1]+np.sum(np.real(F_FKS[1][1])*Acos-Asin*np.imag(F_FKS[1][1]))
       #radForce=np.zeros(3);
       
-      f_hy = self.buoy.get_forces(t,wave,[surge*0,heave,alpha],[0,x[1],0],self.acc)
+      f_hy = self.buoy.get_forces(t,wave,[surge*0,heave,alpha],[0,x[1],0],[0,self.acc,0])
       
       F_h=f_hy[0];
       m0=f_hy[1];
-      m0[1]=m0[1];
-     # print(heave,f_hy[0])
-      Fdrag=self.Calc_drag(x[0],x[1]);
+      #m0[1]=m0[1];
+      #print(heave,f_hy[0])
+      Fdrag=0#self.Calc_drag(x[0],x[1]);
       
       #set added mass by hand (because NEMOH results are weired)
-      def get_am(heave,wave,t):
-          Awave=wave.get(t,0);
-          eta=np.sum(Awave[0]);
-          d=(heave-eta+0.15)/0.3;
-          if d<=0.5:
-              m1=np.max([d,0]);
-          if d>0.5:
-              m1=np.min([(d-0.5)*0.07/0.3+0.5,1]);
-          if d>0.8:
-              m1=np.min([(d-0.8)+0.57,1]);
-          return [0,m1*0.15**3*2/3*3.14*1000,0];
+      #def get_am(heave,wave,t):
+      #    Awave=wave.get(t,0);
+      #    eta=np.sum(Awave[0]);
+      #    d=(heave-eta+0.15)/0.3;
+      #    if d<=0.5:
+      #        m1=np.max([d,0]);
+      #    if d>0.5:
+      #        m1=np.min([(d-0.5)*0.07/0.3+0.5,1]);
+      #    if d>0.8:
+      #        m1=np.min([(d-0.8)+0.57,1]);
+      #    return [0,m1*0.15**3*2/3*3.14*1000,0];
         
       #m0=get_am(heave,wave,t)
       dx=np.zeros(10);
       #m0[1]=self.buoy.Volume(heave*-1)*1000*0.5;
       #print(t,heave,m0[1])
       dP=0;
-      if (t-self.t_old)>0.01:
+      if False:#(t-self.t_old)>0.01:
           #print(t-self.t_old)
           #param=self.buoy.Calculate(heave, 0, 0, 0);
           if False:#x[1]>0:
@@ -130,7 +133,6 @@ class WEC():
       F_sum_x=F_h[1]-self.mass*g+Fdrag+dP;
       
       F_sum_y=F_h[0];
-      
       
       dx[1]=(F_sum_x)/(self.mass+m0[1]);
       #print(self.mass)

@@ -36,7 +36,10 @@ class WEC():
     omega_cut_off=3.2; #highest frequency used for calculation    
     
     states=10;
-    file=os.path.join(utils.wec_dir,"floater.txt");#floaterfile;#Path(__file__).parent()/"floater.txt";
+    try:
+        file=os.path.join(utils.wec_dir,"floater.txt");
+    except(AttributeError): #if directory is not set in utils, use own directory
+        file=os.path.join(os.path.dirname(__file__),"floater.txt");
     acc=0;
     force_sensor=0;
     
@@ -102,7 +105,7 @@ class WEC():
         if (F_pto*dx>=0):
             dx=dx+1;
             
-        p=E**2/(F_pto*dx)*0.5;
+        p=E**2/(F_pto*dx);
         q=X**2;
         R=self.gen_Rc;
         if (p**2-q>0):
@@ -162,7 +165,7 @@ class WEC():
       #print([PTO_force,PTO_force2,brake])
       #Generator force
       F_gen=PTO_force;
-      Pabs=PTO_force*x[1]*0.5;
+      Pabs=PTO_force*x[1];
           
       #Calculate all inertia (physical mass+added mass)
       mass_sum_floater=(self.mass+mah);
