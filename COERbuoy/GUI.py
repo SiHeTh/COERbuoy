@@ -16,6 +16,7 @@ import threading;
 import COERbuoy.Parameters as Parameters;
 import webbrowser;
 import COERbuoy.utils;
+import COERbuoy.analyzer;
 from shutil import copyfile;
 #import svgwrite
 #from svgwrite import mm, deg
@@ -51,7 +52,6 @@ def threadfkt():
             jobs[idx]["status"]="Done";
             print("Finished job "+job["name"])#+"; Absorbed: "+str(jobs[jobidx]["status"])+" %")
             try:
-                #copyfile(os.path.join(COERbuoy.utils.pkg_dir,job["name"]),os.path.join(COERbuoy.utils.user_dir,job["name"]))
                 copyfile(os.path.join(COERbuoy.utils.pkg_dir,job["name"]),os.path.join(COERbuoy.utils.user_dir,job["name"]))
             except(FileNotFoundError):
                 print("COERbuoy_data/results does not exist!")
@@ -63,17 +63,12 @@ jobs=[];
 
         
 class GUIServer(BaseHTTPRequestHandler):
-    #t=threading.Thread(target=threadfkt,args=())    
     print(threading.active_count())
     def send_html_file(self, file):
         self.send_response(200)
         self.send_header("Content-type","text/html")
         self.end_headers()
         f = open(folder+str(file))
-        #if f.read(6)=="navbar":
-        #    print("enter navbar")
-        #    fhead = open("head.html");
-        #    self.wfile.write(bytes(fhead.read(),"utf-8"))
         self.wfile.write(bytes(f.read(),"utf-8"))
         f.close();
     
@@ -118,28 +113,33 @@ class GUIServer(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
         if p[0][-3:]=="csv":
-            print([COERbuoy.utils.pkg_dir,p[0][1:]])
+            file=None;
+            print("requested: "+p[0][1:])
             if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,p[0][1:])):
-                print("delivering "+p[0][1:])
-                f = open(os.path.join(COERbuoy.utils.pkg_dir,p[0][1:]),'r');
+                print("delivering "+p[0][1:]);
+                file=os.path.join(COERbuoy.utils.pkg_dir,p[0][1:]);
+            elif os.path.isfile(p[0]):
+                print("delivering "+p[0]);
+                file=p[0];
+            if file:
+                f = open(file,'r');
                 self.send_response(200)
                 self.send_header("Content-type","text/csv")
                 self.end_headers()
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
-            #elif os.path.isfile(os.path.join(COERbuoy.utils.results0,p[0][1:])):
-             #   print("delivering "+self.path[1:])
-              #  f = open(os.path.join(COERbuoy.utils.results0,p[0][1:]),'r');
-               # self.send_response(200)
-                #self.send_header("Content-type","text/csv")
-                #self.end_headers()
-                #self.wfile.write(bytes(f.read(),"utf-8"))
-                #f.close();
         elif self.path[-3:]=="csv":
+            print("requested: "+[COERbuoy.utils.pkg_dir,self.path[1:],"+s"])
             print([COERbuoy.utils.pkg_dir,self.path[1:],"+s"])
+            file=None;
             if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,self.path[1:])):
                 print("delivering "+self.path[1:]);
-                f = open(os.path.join(COERbuoy.utils.pkg_dir,self.path[1:]),'r');
+                file=os.path.join(COERbuoy.utils.pkg_dir,self.path[1:]);
+            elif os.path.isfile(self.path[1:]):
+                print("delivering "+self.path[1:]);
+                file=self.path[1:];
+            if file:
+                f = open(file,'r');
                 self.send_response(200)
                 self.send_header("Content-type","text/csv")
                 self.end_headers()
@@ -179,16 +179,30 @@ class GUIServer(BaseHTTPRequestHandler):
             
             
         elif self.path=="/jobs.json":
-            #print("refreshing job list")
             self.send_response(200)
             self.send_header("Content-type","text/json")
             self.end_headers()
-
             self.wfile.write(bytes(json.dumps({"status":busy,"jobs":tuple(jobs)}),"utf-8"))
+            
+        elif self.path=="/files.json":
+            self.send_response(200)
+            self.send_header("Content-type","text/json")
+            self.end_headers()
+            a=COERbuoy.analyzer.Analyzer();
+            files=[];
+            path=os.path.join(COERbuoy.utils.user_dir,"results");
+            #a.read_folder(path);
+            #abcd=a.table.to_json(orient="records");
+            #self.wfile.write(bytes(a.table.to_json(orient="records"),"utf-8"))
+            for f in os.listdir(path):#look for files in a folder
+                if f[-4:] == ".csv":
+                    files.append({"file":os.path.join(path,f),"name":f[:-4]});
+            self.wfile.write(bytes(json.dumps({"list":tuple(files)}),"utf-8"))
+            
         elif self.path=="/params.json":
             print("delivering parameter list")
             #print(COERbuoy.utils.wec_dir)
-            f = open(COERbuoy.utils.wec_dir+"/floater.txt")
+            f = open(os.path.join(COERbuoy.utils.wec_dir,"floater.txt"))
             
             self.send_response(200)
             self.send_header("Content-type","text/text")

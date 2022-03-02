@@ -25,10 +25,11 @@
                 chart1.fromCSV(result,2,"time [s]","",file)} });
             });
 
-        $.getJSON("jobs.json", function(data0){
-            data=data0["jobs"]
+        $.getJSON("files.json", function(data0){
+            data=data0["list"]
             $(data).each(function(idx){
-                $("#select_states").append(new Option(data[idx]["desc"],data[idx]["name"]));
+                $("#select_states").append(new Option(data[idx]["name"],data[idx]["file"]));
+                
             });
         });
     });
@@ -76,28 +77,19 @@
     <li><a class="button" href="settings.html">Settings</a></li>
     <li><a class="button" href="about.html">About</a></li>
 </ul>
-    <hline>
+   <hline>
     <div class="hcontainer" style="width:100%;">
 	    <div style="width:20%;">
 	    <label for="select_states">Choose a sea state to show:</label>
 	    <br>
-	    <select name="select_states" id="select_states", size="26">
+	    <select name="select_states" id="select_states", size="26" style="width:100%;">
 	    </select>
 	    </div>
 
 	    <div id="chart" style="width:80%;">
-	        <!--div class="apextoolbar"-->
-	          <!-- <button id="three_waves"
-	              class="active">3 waves     
-	          </button>
-	          <button id="all">
-	            ALL
-	          </button> -->
-	        <!--/div-->
 	      
 	        <div id="chart-timeline""></div>
 	    </div>
 	  </div>
-    
   </body>
 </html>
