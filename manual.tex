@@ -46,7 +46,7 @@ To start the GUI use one of the following commands
 >python3 -m COERbuoyOne --GUI
 >python3 -m COERbuoy --GUI
 \end{verbatim}
-A webbrowser with the GUI should open up. In the first field, you can select a controller, showing the options "none" (no control force applied), "linear" (for testing purposes), "TCP" (opens a TCP connection, the controller has to be started externally), and the controller listed in "COERbuoy\_data/controller".\\
+A webbrowser with the GUI should open up. In the first field, you can select a controller, showing the options "none" (no control force applied), "linear" (for testing purposes), "TCP" (opens a TCP connection, the controller has to be started externally), and the controller available in "COERbuoy\_data/controller".\\
 The next section allows to chose a regular or bretschneider wave. The button start will start the simulation, the status can be seen in the "Results" tab. After completion, the resulting files can be found in the "COERbuoy\_data/results" folder.
 \section{A first controller}
 Download the example controller\footnote{https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom\_controller} and place it into the "controller" folder. At the next start of the GUI, the controller should appear in th dropdown list and can be selected.
@@ -491,14 +491,52 @@ conn_model.close();
 \end{lstlisting}
 \caption{Simple optimal damping controller for the COERbuoy1 model written in python.}\label{fig:controller_python}
 \end{figure}
-\chapter{The  WEC models}
+\chapter{Controller and WEC models}
+\section{Controller}
+One aim while developing the COERbuoy platform was to simplify the process to write external controller for it, see the Control Interface in Chapter \ref{control_interface}. There are already some controllers available in the COERbuoy repository\footnote{https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom\_controller}. In this chapter these controllers are presented.
+\subsection{Moment Based Controller}
+A model-predictive-controller that instead working in the time-domain, is working in the spectral-moment-domain. The Implementaion is absed on \cite{control_mbc_horizon}, thus it is a one degree-of-freedom energy maximizing controller with stroke limitations. Currently not implemented is a velcoity and force constraints, and an additional constraint considering the actual position.
+
+The moment-domain controller provides (for linear hydrodynamics) mathematical proven optimal energy-maximizing control for Wave Energy converter and also allwoing to be computational more effectibve than time-domain model-predictive systems in many scenarios.
+
+The controller is based on the past and future wave data and uses the PTO force as control signal. it takes the stroke limit in one direction $z_{max}$ as input argument, the stroke length is then $\pm z_{max}=2z_{max}$. For a stroke limit of $\pm z_{max}$ the command is:
+\begin{verbatim}
+	python3 MomentBasedController.py 5
+\end{verbatim}
+\subsection{Optimal damping controller}
+This controller calculates the optimal damping (based on linear hydrodynamics and a lienar WEC model) for a regular wave of period $p_w$. The WEC is hereby assumed to be a linear mass-spring-damper system with mass $m$, damping $d$ and spring coefficent $c$. the opimal damping is then:
+\begin{align*}
+	\omega&=2\pi/p_w\\
+	X&=m*\omega-c/\omega\\
+	d_c&=\sqrt{d^2+X^2}\\
+	F_{pto}&=d_c\dot{z}\text{.}
+\end{align*}
+The optimal damping can only be calculated for a \textit{regular wave}. The wave period can hereby specified with the argument when calling, here an example for $p_w=10 s$
+\begin{verbatim}
+	python3 controller_damping.py 10
+\end{verbatim}
+When no wave period is specified, the controller calculates estimates the wave perido from the wave forecast.
+\subsection{Reactive controller}
+Reactive control assums a fully linear system, where the WEC can be described as a mass-spring-damper system with mass $m$, damping $d$ and spring coefficent $c$. The optimal power absorption is then achived when the WEC is controlled so that its mass and spring effects are cancelled and by setting the generator damping equal to the system damping:
+\begin{align*}
+	\omega&=2\pi/p_w\\
+	m_c&=\omega^2 m-c\\
+	F_{pto}&=d\dot{z}+m_c z\text{.}
+\end{align*}
+The optimal PTO force can only be calculated for a \textit{regular wave}. The wave period can hereby specified with the argument when calling, here an example for $p_w=8 s$
+\begin{verbatim}
+	python3 controller_reactive.py 8
+\end{verbatim}
+When no wave period is specified, the controller calculates estimates the wave perido from the wave forecast.
 The COERbuoy platform is a multi-purpose platform, thus it can simulate almost all kinds of heave-point WECs. It comes with three several build in models, of which the COERbuoy1 model is the most advanced.
 The following models are presented here:
 \begin{itemize}
 	\item The COERbuoy1 model, the model for the COERbuoy1 benchmark. The aim is, that this model should be the same, as the one used in the COERbuoy1 benchmark. However, the benchmark model is located in the COERbuoyOne model, thus if the settings of the COERbuoy1 model are changed in the COERbuoy platform, it will have no effect on the benchmark.
 	\item The COERsimple model, which uses the COERbuoy geometry, but removes all forces unless the linear hydrodynamic and an ideal generator force. Furthermore, this model is limited to heave. This model is designed as an ideal WEC model for testing purposes. 
 \end{itemize}
+\section{WEC Models}
 \subsection{COERbuoy1}
+\textbf{There will be an update for the COERbuoy model for the next major release for COERbuoy/CoerbuoyOne}
 The COERbuoy1 model is described in \textit{S. Thomas, J. Hals-Todalshaug, J. Ringwood, ``A realistic nonlinear benchmark problem for
 wave energy controllers - COERbuoy1,'' in 14th European Wave and Tidal Energy Conference,
 Plymouth, UK, 2021}. The parameters can be read directly from the GUI (Parameter tab); they are:
@@ -542,5 +580,6 @@ The equation of motion in heave ($x_y$), which is the only considered motion, is
 where $F_g$ is the generator force, $F_h$ the hydrodynamic forces (includes: buoyancy, excitation and radiation force) and $F_m=m_b g$ the gravity force of the body, related to the body mass $m_b$ and the gravitational acceleration $g\sim9.81$. The added mass at infinity frequency is $m_a$, amd $F_b$ is the breaking force.
 \paragraph{Body shape}
 the body shape is the same as the COERbuoy1, where the profile is described in surge (x), heave (z) coordinates as follows (x,z): (0,-4.5), (3,-2), (3.7,-1), (4,0), (3.7,1), (3,2), (0,4.5).
- 
+ \bibliographystyle{spphys}
+ \bibliography{bibio2}
 \end{document}
