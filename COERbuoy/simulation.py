@@ -281,8 +281,8 @@ def start_simu (**kwargs):
                    "stroke_speed":dynamics.xlast.get(1,tseq)*msg_status[4],
                    "angular_pos":dynamics.xlast.get(2,tseq)*msg_status[5],
                    "angular_speed":dynamics.xlast.get(3,tseq)*msg_status[6],
-                   "force":dynamics.xlast.get(-1,tseq),
-                   "test":np.zeros(100)
+                   "force":dynamics.xlast.get(-1,tseq)*msg_status[7],
+                   "test":(np.real(np.sum(wave1.get(t,np.linspace(-14,14,int(tw)).reshape(tseq.size,1))[0],1)))*msg_status[8]#(np.sum(wave1.get(t,np.linspace(30,-30,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[8]
                    
                    }
               # Exchange data with controller
@@ -355,7 +355,7 @@ def start_simu (**kwargs):
     del wave1;
     wec.release();
     
-    #Cut data so that only data after transient times (if applicable) is considered for power calculation
+    #Cut data so that only data after transient time (if applicable) is considered for power calculation
     s1=np.argmax(sol.t>=0)
     # Output the absorbed power
     power=(sol.y[8,-1]-sol.y[8,s1])/(sol.t[-1])
