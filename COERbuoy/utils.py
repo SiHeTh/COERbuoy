@@ -35,7 +35,7 @@ def get():
         with open(fp) as file:
             data=json.load(file);
             #print(data)
-            global class_hydro, ode_time_step, wec_dir, wec_dir0, conn_ip, conn_port, resolution, dt_controller, msg_status, user_dir;
+            global class_hydro, ode_time_step, wec_dir, wec_dir0, conn_ip, conn_port, resolution, dt_controller, msg_status, user_dir, secureGUI;
             class_hydro=data.get("hydro",class_hydro);
             wec_dir=data.get("WECfolder",wec_dir);
             wec_dir0=data.get("WECfolder_ideal",wec_dir);
@@ -46,9 +46,10 @@ def get():
             ode_time_step=data.get("ODE_time_step",ode_time_step);
             dt_controller=data.get("dt_controller",dt_controller);
             msg_status=data.get("status_message",msg_status);
+            secureGUI=data.get("secure",secureGUI);
          
     #set default values
-    global class_hydro, ode_time_step, wec_dir, wec_dir0,conn_ip, conn_port, resolution, dt_controller, msg_status, controller0, results0, user_dir;
+    global class_hydro, ode_time_step, wec_dir, wec_dir0,conn_ip, conn_port, resolution, dt_controller, msg_status, controller0, results0, user_dir, secureGUI;
     user_dir=os.path.join(os.path.expanduser("~"),"COERbuoy_data")
     class_hydro="floater_bem";
     wec_dir="[data.COERbuoy1]";
@@ -59,6 +60,7 @@ def get():
     resolution=0.1;
     dt_controller=0.1;
     msg_status=[1,1,1,1,1,1,1,1,1,1];
+    secureGUI=0;
     
     #read settings from package dir
     read_settings(os.path.join(pkg_dir,"settings.txt"));

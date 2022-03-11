@@ -8,14 +8,29 @@ The COERbuoy platform
 <script src=jquery/jquery-3.5.1.min.js></script>
 
 <script type="text/javascript" >
+
+	function get_cookie(name,std)
+	{
+	try {
+		c=document.cookie;
+		return c.split(name+"=")[1].split(";")[0];
+	} catch (error) {
+  		console.error(error);
+  	}
+  	return std;
+	}
 	$(document).ready(function(){
-	
+	$("#sel_ctrl").val(get_cookie("input","none"));
+	$("#wavetype").val(get_cookie("wave","regular_wave"));
+	$("#amplitude").val(get_cookie("H","1"));
+	$("#period").val(get_cookie("P","6"));
+	                                            	
 	$.getJSON("controllers.json", function(data){
       $(data).each(function(idx,txt){
       o1=document.createElement("option");
       o1.value=txt;
-      o1.innerHTML=txt;
-      $(sel_ctrl).append(o1)})
+      //o1.innerHTML=txt;
+      $(controllerlist).append(o1)})
       });
 	
 	$("#run_single").on("click",function(){
@@ -78,6 +93,13 @@ The COERbuoy platform
 	job_array=$("#test_run").data("cont");});});
 	               
 	function run_job(job){
+	//Create a cookie to save all the informations
+	document.cookie = "input=" + $("#sel_ctrl").val() + ";SameSite=Strict;"
+	document.cookie = "wave=" + $("#wavetype").val() + ";SameSite=Strict;"
+	document.cookie = "H=" + $("#amplitude").val() + ";SameSite=Strict;"
+	document.cookie = "P=" + $("#period").val() + ";SameSite=Strict;"
+	console.log("-")
+	                                            
 	    job_array={"sea_states":job};
        job_array["ctrl"]=$("#sel_ctrl").val();
 	    $.ajax({url:'run.html',
@@ -104,15 +126,16 @@ The COERbuoy platform
 <div class="hcontainer">
 	<div class="vcontainer">
 		<div>
-		This is a easy to use tool to evaluate control algorithms for Wave Engery Converter of the heave point-absorber type. </br>
+		This is a easy to use tool to evaluate control algorithms for Wave Energy Converter of the heave point-absorber type. </br>
 		</div>
 		
-		<div class="box">
+		<div class="box" style="width:100%;">
 		Please choose from one of the following options:
 		</br></br>
 		<span class="help">Control method:<div class="helptext">List all files from the custom control folder. This folder can be set in the settings tab</div></span>
-		  <select id="sel_ctrl" name="Control">
-		  </select> 
+		  <input id="sel_ctrl" list="controllerlist" name="Control" style="width:100%"> </input>
+		  <datalist id="controllerlist">
+		  </datalist>
 		</br></br>
 		<div class="box">
 			Single wave:
@@ -126,7 +149,7 @@ The COERbuoy platform
 			  <input type="number" id="amplitude" name="WaveAmp" step="0.5" size="4", value="1.5"> </input> m, 
 			  <span class="help">p<div class="helptext">wave period (regular wave), wave energy period (bretschneider spectrum)</div></span>
 			  =
-			  <input type="number" id="period" name="WavePer" step="0.5" size="4" value="3.5"> </input> s. 
+			  <input type="number" id="period" name="WavePer" step="0.5" size="4" value="6"> </input> s. 
 			  </select>
 			  <button id="run_single" data-cont='{"sea_states":[{"wave":"regular_wave","H":1,"P":3.5,"ctrl":"linear"}]}' >Run</button>
 	
@@ -141,7 +164,6 @@ The COERbuoy platform
 			</br>
 			  <button id="regular_sweep">Regular period sweep, H=1.5</button>
 			</br>
-			<!--button id="test_run" data-cont='{"sea_states":[{"wave":"regular_wave","H":1,"P":3.5,"ctrl":"linear"}]}' >test</button-->
 			</br>
 			
          Decay test:

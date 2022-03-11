@@ -19,20 +19,25 @@ function doPoll(){
       desc=document.createElement("th");
       stat=document.createElement("th");
       power=document.createElement("th");
+      buttong=document.createElement("th");
       button=document.createElement("th");
       id.innerHTML=data[idx]["id"];
       desc.innerHTML=data[idx]["desc"];
       stat.innerHTML=data[idx]["status"];
       power.innerHTML=data[idx]["power"]+" W";
-      button.innerHTML="<form method=\"get\" action="+data[idx]["name"]+">\
-       <button type=\"submit\">Open data</button>\
-       </form>";
+      buttong.innerHTML="<a href=\"visuals.html?"+data[idx]["name"]+"\">Graph<a\>";
+      button.innerHTML="<a href=\""+data[idx]["name"]+"\">Download<a\>";
+      //button.innerHTML="<form method=\"get\" action="+data[idx]["name"]+">\
+      // <button type=\"submit\">Open data</button>\
+      // </form>";
       //but=document.createElement
       row1.append(id);
       row1.append(desc);
       row1.append(stat);
-      row1.append(power);
-      row1.append(button);
+      if (data[idx]["status"]=="Done")
+      {row1.append(power);
+      row1.append(buttong);
+      row1.append(button);}
       $(tab1).append(row1);
       }); 
       //alert("Data: " + data + "\nStatus: " + status);
@@ -65,23 +70,8 @@ function doPoll(){
     <th>Description</th>
     <th>Status</th>
     <th>Power</th>
+    <th>Graph</th>
     <th>Data</th>
-  </tr>
-  <tr>
-    <th>Regular wave 1</th>
-    <th>A=1 m, p=2s</th>
-    <th>Not started</th>
-    <th><button onclick="/data/wavefile.html">
-      Open data
-    </button></th>
-  </tr>
-  <tr>
-    <th>Regular wave 1</th>
-    <th>A=1 m, p=2s</th>
-    <th>Not started</th>
-    <th><button onclick="/data/wavefile.html">
-      Open data
-    </button></th>
   </tr>
 </table> 
 <br>

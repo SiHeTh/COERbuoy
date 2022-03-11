@@ -29,12 +29,15 @@ fktdict={"regular_wave":reg_wave,
          "bretschneider_wave":bretschneider_wave,
          "decay_test":decay_test}
 busy=False;
+idx=0;
+
 
 def threadfkt():
     global busy
-    idx=0;
+    global idx;
     #busy=True;
     while len(jobs)>idx:
+        print("Running job no. "+str(idx))
         job=jobs[idx];
         job["status"] = "Running";
         if job["status"] != "Done":
@@ -75,52 +78,70 @@ class GUIServer(BaseHTTPRequestHandler):
     def do_GET(self):
         #print(self.path)
         global busy;
-        p=self.path.split("?");  
-        if self.path[-3:]=="svg":
-            if os.path.isfile(folder+self.path[1:]):
-                print("delivering "+self.path[1:])
-                f = open(folder+self.path[1:],'rb')
+        p=self.path.split("?")[0];  
+        if p[-3:]=="svg":
+            if os.path.isfile(folder+p[1:]):
+                print("delivering "+p[1:])
+                f = open(folder+p[1:],'rb')
                 self.send_response(200)
                 self.send_header("Content-type","image/svg+xml")
                 self.end_headers()
                 self.wfile.write(f.read())
                 f.close();
-        if self.path[-3:]=="png":
-            if os.path.isfile(folder+self.path[1:]):
-                print("delivering "+self.path[1:])
-                f = open(folder+self.path[1:],'rb')
+        if p[-3:]=="png":
+            if os.path.isfile(folder+p[1:]):
+                print("delivering "+p[1:])
+                f = open(folder+p[1:],'rb')
                 self.send_response(200)
                 self.send_header("Content-type","image/png")
                 self.end_headers()
                 self.wfile.write(f.read())
                 f.close();
-        if self.path[-3:]=="jpg":
-            if os.path.isfile(folder+self.path[1:]):
-                print("delivering "+self.path[1:])
-                f = open(folder+self.path[1:],'rb')
+        if p[-3:]=="jpg":
+            if os.path.isfile(folder+p[1:]):
+                print("delivering "+p[1:])
+                f = open(folder+p[1:],'rb')
                 self.send_response(200)
                 self.send_header("Content-type","image/jpg")
                 self.end_headers()
                 self.wfile.write(f.read())
                 f.close();
-        if self.path[-3:]=="css":
-            if os.path.isfile(folder+self.path[1:]):
-                print("delivering "+self.path[1:])
-                f = open(folder+self.path[1:],'r')
+        if p[-3:]=="css":
+            if os.path.isfile(folder+p[1:]):
+                print("delivering "+p[1:])
+                f = open(folder+p[1:],'r')
                 self.send_response(200)
                 self.send_header("Content-type","text/css")
                 self.end_headers()
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
-        if p[0][-3:]=="csv":
+        if p[-3:]=="csv":
             file=None;
-            print("requested: "+p[0][1:])
-            if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,p[0][1:])):
-                print("delivering "+p[0][1:]);
-                file=os.path.join(COERbuoy.utils.pkg_dir,p[0][1:]);
-            elif os.path.isfile(p[0]):
-                print("delivering "+p[0]);
-                file=p[0];
+            print("requested: "+p)
+            if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,p[1:])):#local dir
+                file=os.path.join(COERbuoy.utils.pkg_dir,p[1:]);
+            elif os.path.isfile(p) and not secureGUI:# absolute dir
+                file=p;
+            elif os.path.isfile(os.path.join(os.path.expanduser("~"),"COERbuoy_data/results",p.split("/")[-1])):#local dir
+                file=os.path.join(os.path.expanduser("~"),"COERbuoy_data/results",p.split("/")[-1]);
+            if file:
+                f = open(file,'r');
+                print("delivering "+p);
+                self.send_response(200)
+                self.send_header("Content-type","text/csv")
+                self.end_headers()
+                self.wfile.write(bytes(f.read(),"utf-8"))
+                f.close();
+        elif p[-3:]=="csv":
+            print("requested: "+[COERbuoy.utils.pkg_dir,p[1:],"+s"])
+            print([COERbuoy.utils.pkg_dir,p[1:],"+s"])
+            file=None;
+            if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,p[1:])):
+                print("delivering "+p[1:]);
+                file=os.path.join(COERbuoy.utils.pkg_dir,p[1:]);
+            elif os.path.isfile(p[1:]):
+                print("delivering "+p[1:]);
+                file=p[1:];
             if file:
                 f = open(file,'r');
                 self.send_response(200)
@@ -128,63 +149,34 @@ class GUIServer(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(bytes(f.read(),"utf-8"))
                 f.close();
-        elif self.path[-3:]=="csv":
-            print("requested: "+[COERbuoy.utils.pkg_dir,self.path[1:],"+s"])
-            print([COERbuoy.utils.pkg_dir,self.path[1:],"+s"])
-            file=None;
-            if os.path.isfile(os.path.join(COERbuoy.utils.pkg_dir,self.path[1:])):
-                print("delivering "+self.path[1:]);
-                file=os.path.join(COERbuoy.utils.pkg_dir,self.path[1:]);
-            elif os.path.isfile(self.path[1:]):
-                print("delivering "+self.path[1:]);
-                file=self.path[1:];
-            if file:
-                f = open(file,'r');
-                self.send_response(200)
-                self.send_header("Content-type","text/csv")
-                self.end_headers()
-                self.wfile.write(bytes(f.read(),"utf-8"))
-                f.close();
                 
-        elif p[0][-3:]=="pdf":
-            if os.path.isfile(self.path[1:]):
-                print("delivering "+self.path[1:])
-                f = open(self.path[1:],'rb')
+        elif p[-3:]=="pdf":
+            if os.path.isfile(p[1:]):
+                print("delivering "+p[1:])
+                f = open(p[1:],'rb')
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(bytes(f.read()))
                 f.close();
                 
-        elif p[0][-3:]=="zip":
-            if os.path.isfile(self.path[1:]):
-                print("delivering "+self.path[1:])
-                f = open(COERbuoy.utils.pkg_dir+"/"+self.path[1:],'rb')
+        elif p[-3:]=="zip":
+            if os.path.isfile(p[1:]):
+                print("delivering "+p[1:])
+                f = open(COERbuoy.utils.pkg_dir+"/"+p[1:],'rb')
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(bytes(f.read()))
                 f.close();
                 
                 
-        elif self.path=="/visuals.html":
-            self.send_html_file("testchart.html");
             
-        elif self.path=="/test.html":
-            self.send_html_file("test.html");
-            
-        elif self.path=="/start.html":
-            self.send_html_file("start.html");
-            
-        elif self.path=="/settings.html":
-            self.send_html_file("settings.html");
-            
-            
-        elif self.path=="/jobs.json":
+        elif p=="/jobs.json":
             self.send_response(200)
             self.send_header("Content-type","text/json")
             self.end_headers()
             self.wfile.write(bytes(json.dumps({"status":busy,"jobs":tuple(jobs)}),"utf-8"))
             
-        elif self.path=="/files.json":
+        elif p=="/files.json":
             self.send_response(200)
             self.send_header("Content-type","text/json")
             self.end_headers()
@@ -199,7 +191,7 @@ class GUIServer(BaseHTTPRequestHandler):
                     files.append({"file":os.path.join(path,f),"name":f[:-4]});
             self.wfile.write(bytes(json.dumps({"list":tuple(files)}),"utf-8"))
             
-        elif self.path=="/params.json":
+        elif p=="/params.json":
             print("delivering parameter list")
             #print(COERbuoy.utils.wec_dir)
             f = open(os.path.join(COERbuoy.utils.wec_dir,"floater.txt"))
@@ -209,14 +201,14 @@ class GUIServer(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bytes(f.read(),"utf-8"))
             f.close();
-        elif self.path=="/controllers.json":
+        elif p=="/controllers.json":
             print("delivering controller list")
             self.send_response(200)
             self.send_header("Content-type","text/json")
             self.end_headers()
             self.wfile.write(bytes(json.dumps(COERbuoy.utils.get_controller()),"utf-8"));
             
-        elif self.path=="/settings.json":
+        elif p=="/settings.json":
             f = open(COERbuoy.utils.pkg_dir+"/settings.txt",'r')
             self.send_response(200)
             self.send_header("Content-type","text/json")
@@ -225,22 +217,15 @@ class GUIServer(BaseHTTPRequestHandler):
             f.close();
 
             
-        elif self.path[-3:]==".js":
-            print("delivering "+self.path[1:])
-            f = open(folder+self.path[1:],'r')
+        elif p[-3:]==".js":
+            print("delivering "+p[1:])
+            f = open(folder+p[1:],'r')
             self.send_response(200)
             self.send_header("Content-type","text/javascript")
             self.end_headers()
             self.wfile.write(bytes(f.read(),"utf-8"))
-            #f.close();
-        elif p[0]=="/results.html":
-            self.send_html_file("results.html");
-        elif p[0]=="/about.html":
-            self.send_html_file("about.html");
-        elif p[0]=="/doc.html":
-            self.send_html_file("params.html"); 
-        elif p[0][-5:]==".html":    
-            self.send_html_file(p[0][1:]);           
+        elif p[-5:]==".html":    
+            self.send_html_file(p[1:]);           
         else:
             self.send_html_file("start.html");
             
@@ -266,7 +251,7 @@ class GUIServer(BaseHTTPRequestHandler):
             Parameters.run();
         
         #replace settings file
-        if self.path=="/new_settings.json":
+        if self.path=="/new_settings.json" and not secureGUI:
             txt=self.rfile.read(int(self.headers["Content-Length"]))
             with open(COERbuoy.utils.pkg_dir+"/settings.txt",'w') as jfile:
                 jfile.write(txt);
@@ -293,16 +278,17 @@ class GUIServer(BaseHTTPRequestHandler):
             
             if not busy:# not busy:
                 print(busy)
-                jobs.clear();
-                ##For security reasons only allow known commands to be executed;
-                ##can be removed in local installation
-                #if not (data1["ctrl"]=="python3 Controller_NL_TCP.py" 
-                #        or data1["ctrl"]=="python3 Controller1.py"
-                #        or data1["ctrl"]=="py Controller1.py"
-                #        or data1["ctrl"]=="linear"
-                #        or data1["ctrl"]=="ocatve Extremiumcontroller2.m"):
-                #    data1["ctrl"]="linear";
+                #jobs.clear();
+                #For security reasons only allow known commands to be executed;
+                #can be removed in local installation
                 for data in data1["sea_states"]:
+                            if secureGUI:
+                                if not (data1["ctrl"]=="controller_damping.py" 
+                                        or data1["ctrl"]=="controller_reactive.py"
+                                        or data1["ctrl"]=="MomentBasedController.py"
+                                        or data1["ctrl"]=="linear"
+                                        or data1["ctrl"]=="none"):
+                                    data1["ctrl"]="linear";
                             print(data)
                             strdata="";
                             for e in data.items():
@@ -329,6 +315,8 @@ class GUIServer(BaseHTTPRequestHandler):
     
 def run():
     COERbuoy.utils.get();
+    global secureGUI
+    secureGUI=COERbuoy.utils.secureGUI;
     hostName="localhost"
     serverPort = 8080;
     global folder;
@@ -346,7 +334,6 @@ def run():
         hostName=data.get("host","localhost");
         serverPort=data.get("port",8080);
     print("Bind to "+hostName+" at port "+str(serverPort)+".")
-    #HTTPServer.socket.setsockopt(socket.SOL_SOCKeT, socket.SO_REUSEADDR,1);
     webServer = ThreadingHTTPServer((hostName, serverPort), GUIServer)
     webbrowser.open("http://"+str(hostName)+":"+str(serverPort))
     try:
