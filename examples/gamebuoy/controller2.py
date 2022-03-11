@@ -20,7 +20,8 @@ def threadfkt(path):
     os.chdir(path)
     print("start server")
     #COERbuoy.reg_wave(4,12,"test.csv","TCP");
-    COERbuoy.bretschneider_wave(3,8,"bretschneider_wave.csv","TCP")
+    #COERbuoy.bretschneider_wave(3,8,"bretschneider_wave.csv","TCP")
+    COERbuoy.start_simu(wave=COERbuoy.bretschneider_wave(4,6,n=23,n0=0,ne=0),control="TCP")
     #COERbuoy.bretschneider_wave(5,12,"bretschneider_wave.csv","TCP")
     
 #async def input_handler(ws, path):
@@ -49,7 +50,7 @@ async def echo(ws, path):
 "resolution":0.01,
 "conn_ip":"""+'"'+conn_ip+'"'+""",
 "conn_port":"""+str(conn_port)+""",
-"status_message":[1,1,1,1,1,1,1,1]}""");
+"status_message":[1,1,1,1,1,1,1,1,1]}""");
     
         global fscore;
         #Start controller
@@ -105,12 +106,14 @@ async def echo(ws, path):
               alpha =msg["angular_pos"];  #1x100 array with pitch angle (related to time series)
               dalpha=msg["angular_speed"];#1x100 array with pitch angular speed (related to time series)
               force =msg["force"];        #1x100 array with force sensor data (related to time series)
+              wavex =msg["test"];        #1x100 array with force sensor data (related to time series)
               #* not available during COERbuoy1 benchmark
               now=time[-1]; #The last element contains the most recent data (except the wave forecast)
               
-              msgdata={"type":"status","wave":(-1*wave_f[14*2:0:-1]+-1*wave[:100-14*2:-1])[::1],"y":(x[-1]+np.cos(alpha[-1])*20)-20,"x":x[-1]*np.sin(alpha[-1])*20,"score":str(int(score/1000))};
+              #msgdata={"type":"status","wave":(-1*wave_f[14*2:0:-1]+-1*wave[:100-14*2:-1])[::1],"y":(x[-1]+np.cos(alpha[-1])*20)-20,"x":x[-1]*np.sin(alpha[-1])*20,"score":str(int(score/1000))};
               l=60;
-              msgdata={"type":"status","wave":(wave_f[50:0:-1]+wave[:50:-1])[::1],"y":1*(x[-1]+np.cos(alpha[-1])*l)-l,"x":x[-1]*np.sin(alpha[-1])*l,"score":str(int(score/1000))};
+              #msgdata={"type":"status","wave":(wave_f[50:0:-1]+wave[:50:-1])[::1],"y":1*(x[-1]+np.cos(alpha[-1])*l)-l,"x":x[-1]*np.sin(alpha[-1])*l,"score":str(int(score/1000))};
+              msgdata={"type":"status","wave":(wavex)[::1],"y":1*(x[-1]+np.cos(alpha[-1])*l)-l,"x":x[-1]*np.sin(alpha[-1])*l,"score":str(int(score/1000))};
               await ws.send(json.dumps(msgdata));
               #print("test");
     
@@ -194,7 +197,7 @@ async def echo(ws, path):
                 with open(fscore,'w') as f:
                     f.write(json.dumps(slist));
                 break;
-        msgdata={"type":"finish","wave":(wave_f[14:0:-1]+wave[:86:-1])[::1],"heave":x[-1],"score":str(int(score/1000))};
+        msgdata={"type":"finish","wave":(wavex)[::1],"heave":x[-1],"score":str(int(score/1000))};
         await ws.send(json.dumps(msgdata));   
             
         #async for msg in ws:
@@ -208,10 +211,3 @@ async def main():
 global fscore;
 fscore=os.path.realpath(os.path.join(os.path.dirname(__file__),"highscore.txt"));
 asyncio.run(main());
-#async def ws_main(uri):
-#    async with websockets.connect(uri) as ws:
-#        data = await ws.recv();
-#        print(data);
-#        await ws.send("data");
-#    
-#asyncio.run(ws_main("ws://localhost:8088"));
