@@ -83,8 +83,8 @@ class Floater_BEM(Floater):
         #Generate wave from movement
         if (np.sum(np.abs(exc1))>0):
             c_1=2*3.14*(self.omega*self.omega*self.omega/self.g)/(4*pi*self.g**2*self.rho*1);
-            r0=(c_1*exc1[0].real+1j*c_1*exc1[0].imag)*v[1];#Using Hashkind to get radiation (numerically best solution)
-            r1=(c_1*exc1[0].real+1j*c_1*exc1[1].imag)*v[1];
+            r0=(c_1*exc1[0].real+1j*c_1*exc1[0].imag)*v[0];#Using Hashkind to get radiation (numerically best solution)
+            r1=(c_1*exc1[1].real+1j*c_1*exc1[1].imag)*v[1];
             #axisymetric devcies do not really have cross terms for radiation
             
             wave.add_diracWave(-2/np.pi*r0,t,True);
@@ -106,7 +106,7 @@ class Floater_BEM(Floater):
                     self.file.write(str(t)+","+str(eta)+","+str(abs(res[0][1]))+","+str(abs(FK))+","+str(abs(np.real(np.sum(m(wave.get_rad(t,x0),exc1[1])))))+","+str(abs(dP))+"\r\n");
                     self.t_old=t;
                 
-        Frad=[np.real(np.sum(wave.get_rad(t,x0)*(exc1[0]))),np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1]))),0];#radiation force
+        Frad=[np.real(np.sum(m(wave.get_rad(t,x0),(exc1[0])))),np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
             
         
