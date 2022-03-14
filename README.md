@@ -3,13 +3,16 @@
 ![Decay test sphere D=0.3m](decay_test.png)
 
 
-<br>
 ## 1. Learn how to use COERbuoy
 ### 1.1 Basic usage
+
 For a quick guide into using COERbuoy, please see section 3: Run COERbuoy. If you use jupyther, there is a [notebook available](https://github.com/SiHeTh/COERbuoy/blob/main/basic_usage.ipynb) with a few examples. The most comprehensive overview over COERbuoy is given in the [manual](https://github.com/SiHeTh/COERbuoy/raw/main/manual.pdf).
+
 ### 1.2 Writing a controller
 Please see the examples using python or MATLAB in the [example section](https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom_controller).
+
 ### 1.3 Writing a WEC
+
 The inclusion of custom WECs is possible, but not offically suported. However, an example is [available](https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom_WEC).
 
 ## 2. Installation
