@@ -119,6 +119,10 @@ class WEC():
             #limit to 1D
             self.heave_only=data.get("heave_only",0);
             self.heave_only=1-self.heave_only;
+            #pitch spring to limit pitch motion
+            self.c_p=data.get("pitch_stiffness",0.025);
+            #damping of pitch spring
+            self.d_p=data.get("pitch_damping",0.5);
             
     #Get linearised mass, damping and spring coefficent        
     def pto_mdc (self, z):

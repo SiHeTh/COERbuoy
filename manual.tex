@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage[table]{xcolor}
 \usepackage{tikz}
+\usepackage{tcolorbox}
 \newcommand{\includeTIKZ}[2]{%  
 	\scalebox{#1}{\input{#2}}  }
 \lstset{ %
@@ -17,6 +18,12 @@
 %opening
 \title{Manual for COERbuoy1 model and benchmark tool}
 \author{Centre of Ocean Energy Research, Maynooth University}
+\newtcolorbox{example}[1]{colback=blue!10!white,colframe=blue!20!white,fonttitle=\bfseries,coltitle=black,
+	toprule=3pt,
+	leftrule=2pt,
+	rightrule=2pt,
+	titlerule=0pt,
+	title=Example}
 
 \begin{document}
 
@@ -96,7 +103,7 @@ Inside a terminal/shell the COERbuoy1 model is started as an argument for the py
 >python3 -m COERbuoyOne --regular_wave 1 6 "outfile.csv" "controller.py"
 #
 #Start a bretschneider wave with significant height 1 m, energy period 6 s,
-#write results in "outfile.csv" anb use controller "controller.py"
+#write results in "outfile.csv" and use controller "controller.py"
 >python3 -m COERbuoyOne --bretschneider_wave 1 6 "outfile.csv" "controller.py"
 \end{verbatim}
 %Without any further argument the COERbuoy1 model will run a standard test. If everything is set up correctly the output should be similar to:
@@ -104,14 +111,67 @@ Inside a terminal/shell the COERbuoy1 model is started as an argument for the py
 %>Absorbed power: 146.23260000000002 kW
 %>close socket
 %\end{verbatim}
-\section{Usage cases}
-The COERbuoy platform aims to combine three aspects: (1) it aims to be an easy to use simulation tool for heave-absorber WECs which can also be used by people unfamiliar with programming. (2) It should be a tool for WEC developer with scripting/programming knowledge and should integrate in existing workflows, therefore it should be easy to call from within batch file, scripts and other software. (3) It should be a powerful python library that can be used by people with python skills.\\
-For (1) the GUI was developed, providing an easy to use interface, without the need to write any code. It is furthermore a powerful tool to visualize the parameters of the system and run ad-hoc test with instantaneous visualisation.\\
-The command line interface can be called via the terminal/shell/command line, and by this can be called form every scripting/programming language and by this integrated in existing workflows. Thus it will satisfy the needs of (2).\\
+\section{Usage scenarios}
+The COERbuoy platform was develoepd with three target groups in mind: (1) as an easy-to-use simulation software for heave-absorber WECs. (2) for wave energy researcher with scripting/programming knowledge who want to integrate COERbuoy - independent of the operating system or programming language - in existing workflows. (3) for researcher developing in python, as a powerful python library that can for example be used in jupyther notebooks.\\
+For (1) the GUI provides an easy to use interface, without the need to write code. It is furthermore a powerful tool to visualise the parameters of the WEC system and run ad-hoc test with instantaneous visualisation.\\
+Target group (2) can use the command line interface that can easily be interate in most worflows. The control interface (Section \ref{sec:CI}) simplifies the process of writing controller for the COERbuoy.\\
 (3) As a python package the full potential is available when used directly in python, or a language with python support, such as MATLAB or octave.
-\paragraph{Principle usage}
-To achieve all three aims, multiple handling concepts have to be mixed. The default rule is, that the working directory, mostly the folder the program was started from, determines the behaviour. The program will look for a file called "coerbuoy\_setting.txt" (see Section \ref{sec:settings}) which specifies the principal settings. If this file is not found, the global setting, defined in a test file in the COERbuoy folder is used. When used via the command line or called as a library, the output file will be written into the working directory. Also files defining the controller passed as argument will be searched first in the current folder.\\
-The GUI has a slightly different approach. When starting the first time, it will create a folder "coerbuoy\_data" in the local home directory\footnote{Please not the local home folder is not (necessarily) the "My Documents" folder! Under Windows it the path is usually C:$>$[User]$>$}. This folder has two subfolders: "controller" and "results". The second will be used to store the output data file of simulations run via the GUI, the second can be used to store controller. If COERbuoy can not find the controller file in the current directory, it will search in the "coerbuoy\_data$>$controller" folder. This behaviour is the same for the GUI, the CLI or when used as a python library. 
+To statisfy all three groups, several handling concepts had to be combined. Therefore the behavior of COERbuoy is mostly determined by files.
+\paragraph{Working directory}
+By default, the working directory, generally the folder the program was started from, determines the behaviour. If the prograsm is executed it will look for a file called "coerbuoy\_setting.txt" (see Section \ref{sec:settings}) which specifies the principal settings. If this file is not found, the global setting, defined in the COERbuoy installation folder is used.
+When used via the command line or called as a library, the output file will be written into the working directory. Also files defining the controller passed as argument will be searched first in the current folder.\\
+\paragraph{coerbuoy\_data folder}
+When started for the first time, the GUI creates a folder "coerbuoy\_data" in the local home directory\footnote{Please not the local home folder is not (necessarily) the "My Documents" folder! Under Windows it the path is usually C:$>$[User]$>$}. This folder has two subfolders: "controller" and "results". The second will be used to store the output data file of simulations run (and only when run) via the GUI, the second can be used to store controller. If COERbuoy can not find the controller file in the current directory, it will search in the "coerbuoy\_data$>$controller" folder. This behaviour is the same for the GUI, the CLI or when used as a python library.
+\begin{example}
+AA folder "testrun" on an arbiratary location on the file system was created. It contains a file "coerbuoy\_settings.txt" with content
+\begin{verbatim}
+	{"dt_controller": 1}
+\end{verbatim}
+The file "controller\_damping.py" from the COERbuoy repository was copied into the folder "C:$>$[User]$>$coerbuoy\_data$>$controller". A terminal window is open and the path is set to "testrun". Now COERbuoy is started with
+\begin{verbatim}
+	> python3 -m COERbuoy --regular_wave 1 10 "out.csv" "controller_damping.py"
+\end{verbatim}
+The simulation will use the file \textit{controller\_damping.py} from the \textit{controller} folder and execute the controller every second. The output file is written into the "testrun" folder.
+
+When executing the same command from an empty folder, the global settings for \textit{dt\_controller} will be used, however, the same controller is used.
+
+When placing a file \textit{controller\_damping.py} inside this empty folder, this controller file will be used instead of the identical named file in the \textit{controller} folder.
+\end{example}
+It is recommended to gather all controller in the "C:$>$[User]$>$coerbuoy\_data$>$controller" folder, so that they can be easily accessed.
+\subsection{The control command}
+The COERbuoy platform was designed with the main goal to allow the hassle-free integration of custom controller. Controller can be written in any language, as long as they incoperate the Control Interface specified in Section \ref{sec:CI}. The control interface creates a TCP connection between COERbuoy and controller, thus controller and COERbuoy run as different tasks, and thus have to be started seperatly
+\paragraph{Starting the controller manually}
+In this case the option \textit{TCP} has to be passed when starting COERbuoy. COERbuoy will start, inform that it is ready and will ask to start the controller. The controller has then be started manually.
+\paragraph{"Autostart" controller}
+When working in MATLAB, it can get complicated to switch between python to start COERbuoy and MATLAb to start teh controller. The MATLAB example controller in the COERbuoy repository, starts the COERbuoy platform within the MATLAB script, so that the TCP process is automaisied.
+\paragraph{Control command as parameter}
+When starting COERbuoy, a control command is required. Here, the control file to use can be specified. The control file is searched (a) in the current directory, if not found (b), in the "coerbuoy\_data$>$controller" folder. The control command is the command that is used to run the program from the command line interface, for example a ruby controller could be started with "ruby controller.rb". When the controller is written in python (thus the file ends with ".py") or a binary executable (for example ".exe") there is no need for an control command.
+\begin{example}
+	
+	(1) When using no control, COERbuoy can be executed from the command line as:
+	\begin{verbatim}
+		> python3 -m COERbuoy --regular_wave 1 10 "out.csv" "none"
+	\end{verbatim}
+(2) Let's copy the example controller "controller.py" from teh COERbuoy repository in the current working directory. Then COERbuoy can be started with the TCP interface open as
+\begin{verbatim}
+	> python3 -m COERbuoy --regular_wave 1 10 "out.csv" "TCP"
+\end{verbatim}
+and timly thereafter, in a second terminal window, the controller with
+\begin{verbatim}
+	> python3 controller.py"
+\end{verbatim}
+
+(3) The control command can also be combined, so that COERbuoy is called 
+\begin{verbatim}
+	> python3 -m COERbuoy --regular_wave 1 10 "out.csv" "python3 controller.py"
+\end{verbatim}
+this is equalt to (2).
+
+(4) When the interpreter is known (as it is for python), the interpreter can be ommited, thus (3) becomes:
+\begin{verbatim}
+	> python3 -m COERbuoy --regular_wave 1 10 "out.csv" "controller.py"
+\end{verbatim}
+\end{example}
 \section{Running COERbuoy(1)}
 \subsection{Running COERbuoy(1) from within python}
 To run a simulation with user defined settings, the \textit{run} function must be started:
@@ -267,7 +327,7 @@ The COERbuoy platform (but not the COERbuoy1 benchmark), can be tailored to the 
 		\hline
 		dt\_controller&sampling period controller$^2$&\{time in s\}&0.1\\
 		\hline
-		resolution&time step output file&\{time step in s\}&0.01\\
+		resolution&time step output file&\{time step in s\}&0.1\\
 		\hline
 		ode\_time\_step&ODE sampling period&\{time step in s\}&0.01\\
 		\hline
@@ -507,7 +567,7 @@ The controller is based on the past and future wave data and uses the PTO force 
 This controller calculates the optimal damping (based on linear hydrodynamics and a lienar WEC model) for a regular wave of period $p_w$. The WEC is hereby assumed to be a linear mass-spring-damper system with mass $m$, damping $d$ and spring coefficent $c$. the opimal damping is then:
 \begin{align*}
 	\omega&=2\pi/p_w\\
-	X&=m*\omega-c/\omega\\
+	X&=m\omega-c/\omega\\
 	d_c&=\sqrt{d^2+X^2}\\
 	F_{pto}&=d_c\dot{z}\text{.}
 \end{align*}
@@ -540,36 +600,199 @@ The following models are presented here:
 The COERbuoy1 model is described in \textit{S. Thomas, J. Hals-Todalshaug, J. Ringwood, ``A realistic nonlinear benchmark problem for
 wave energy controllers - COERbuoy1,'' in 14th European Wave and Tidal Energy Conference,
 Plymouth, UK, 2021}. The parameters can be read directly from the GUI (Parameter tab); they are:
-\begin{figure}[h!]\label{tab:param_settings}
-	\begin{tabular}{|c|p{7cm}|p{2cm}|c|}
-		\hline
-		parameter name & description & values & unit \\
-		\hline
-		negative\_spring\_force&constant force of the negative spring& 450000 & Ns/m \\
-		negative\_spring\_lenth&Length of the spring; related to stiffness&1.6&m\\
-		negative\_spring\_stroke&When exeeding this stroke length, the negative spring value is 0&5&m\\
-		\hline
-		viscous\_drag\_coefficent\_heave&drag coefficent in heave&0.2&-\\
-		viscous\_drag\_coefficent\_surgee&drag coefficent in surge&0.2&-\\
-		\hline
-		mass\_percent\_floater&splits the buoyancy force into gravitational force and pre-tension force&0.8&m\\
-		\hline
-		generator\_Rc&internal resistance of the generator&2&$\Omega$\\
-		generator\_c\_L&Inductance constant of the generator&60&-\\
-		generator\_c\_lambda&Lambda factor of the generator&4000&-\\
-		generator\_I\_s&saturation current of the generator&300&A\\
-		\hline
-		heave only&1-heave motion only; 0-heave and surge motion&0&-\\
-		\hline
-		friction\_force\_static&Static (when not moving) friction&30000&N\\
-		friction\_force\_kinetik&Kinetik (when moving) friction&1500&N\\
-		friction\_force\_damping&Velocity proportional friction&7500&Ns/m\\
-		\hline
-		l\_mooring&length mooring line&15&m\\
-		\hline
-	\end{tabular}
-	\caption{Parameters of thex COERbuoy1 model}
+
+The COERbuoy1 model is a WEC of the heave-point absorber class, meaning that it generates the power mostly by the motion in heave direction. The buoy movement is restricted to the heave and surge direction. Friction is modeled with a static (constant force at rest), a kinetic (constant force while moving) and a damping (velocity dependent force) part. Inspired by the CorPower wave energy device, a spring opposing the buoyancy stiffness is installed between translator and generator, so that the motion response in amplified (\textit{passive control}). The stroke length is limited to $\pm3.5$ m from the mean position. There is no fixed limit for the generator force, however, these can be obtained by the electrical limits of the generator.
+The COERbuoy1 WEC is anchored with a stiff line to the sea bed, where it is mounted with a pivot joint. A sketch can be seen in Figure \ref{fig:hydro}. A torsion spring reduces hereby the angular movement.
+Buoy and the stiff line are connected with a power-take-off (PTO) mechanism.
+
+
+The position vector, in global coordinates, for surge ($x_1$) and heave ($x_3$) is $\vec{x}_p=[x_1\:x_3]^T$. The global coordinates are transferred into body coordinates described in polar coordinates by the stroke length $\varsigma$ and the pitch angle $\alpha$ of the mooring line as shown in Figure \ref{fig:hydro}:
+\begin{equation}
+	\vec{\varsigma}=\begin{bmatrix}
+		\varsigma\\ \alpha
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		||\vec{x}_p ||\\ \angle(\vec{x_p+l_m})
+	\end{bmatrix}\text{.}
+\end{equation}
+The equation of motion is
+\begin{equation}
+	\begin{split}
+		\vec{\ddot{x}}=&(\vec{F}_{hy}(\vec{x})+\vec{F}_{D}(\vec{x})+\vec{F}_{r}(\vec{x})+\vec{F}_{b}+\\
+		&\vec{F}_{fs}+\vec{F}_{gen}+\vec{F}_{m}+\vec{F}_{br}+\vec{F}_{sp}+\vec{F}_{g})/(m+\vec{m}_a)
+	\end{split}
+\end{equation}
+where $m$ is the mass, $m_a$ the hydrodynamic high frequency limit of the added mass, $\vec{F}_{hy}$ the excitation force, $\vec{F}_{D}$ the viscous drag force, $\vec{F}_{r}$ the radiated wave force, $\vec{F}_{b}$ the buoyancy force, $\vec{F}_{fs}$ the force from the buoyancy opposing spring, $\vec{F}_{m}$ the machinery friction force, $\vec{F}_{sp}$ the force of the torsion spring and $\vec{F}_{g}=m \vec{g}$ the gravity force, with $g=9.82 \frac{m}{s^2}$ the gravitational acceleration. The generator force $\vec{F}_{gen}$ and the friction brake force $\vec{F}_{br}$ can be set arbitrarily (within limits).
+The remainder of this Section describes the body-exact hydrodynamic force (Subsection \ref{ssec:hydrodynamicForces}) and the machinery forces in Subsection \ref{ssec:MachineF}.
+\subsection{Forces}
+\paragraph{Viscous drag}
+The viscous drag in heave and surge is calculated based on the actual projected wetted surface $S_{w,j}$ and a drag coefficients $c_{D,j}$:
+\begin{equation}
+	F_{D,j}=S_{w,j}c_{D,j}\dot{x}_j|\dot{x}_j|\text{.}
+\end{equation}
+\begin{figure}[!t]
+	\centering
+	\includegraphics[width=70mm]{bigdiagram6}
+	\caption{Schematic of the COERbuoy1 model.}
+	\label{fig:hydro}
 \end{figure}
+\begin{table}[!t]
+	\centering
+		\begin{tabular}{c c c c}
+			\hline
+			Name & Symbol & Value & Range \\
+			\hline
+			\textbf{Negative spring}&&&\\
+			force&$c_{fs}$&$450$ kN&$\pm0.2$\\
+			length&$c_{ls}$&$2.0$ m&\\
+			stroke&$s_{fs}$&$5$ m&\\
+			&&&\\
+			\textbf{Viscous drag}&&&\\
+			heave coefficent&$D_{h}$&$0.2$&\\
+			surge coefficent&$D_{s}$&$0.5$&\\
+			&&&\\
+			\textbf{Friction}&&&\\
+			static friction&$fr_s$&$30$ kN&$\pm0.2$\\
+			kinetic friction&$fr_d$&$15$ kN&\\
+			friction damping&$d_{add}$&$7.5$ kNs/m&$\pm0.4$\\
+			&&&\\
+			\textbf{Friction break}&&&\\
+			max. power&$P_{br}^{max}$&$1$ kW&\\
+			&&&\\
+			\textbf{Generator}&&&\\
+			copper resistance&$R_c$&$2\:\Omega$&\\
+			inductance coef.&$c_L$&$120\:\frac{Vs}{m}$&\\
+			flux coef.&$c_\lambda$&$8000\:\frac{VAs}{m}$&\\
+			saturation current&$I_{s}$&$300$ A&\\
+			&&&\\
+			\textbf{Pitch spring}&&&\\
+			stiffness&$c_p$&$10\frac{\text{N}}{\text{rad}}$&\\
+			damping&$d_p$&$5\frac{\text{Ns}}{\text{rad}}$&\\
+			&&&\\
+			\textbf{Miscellaneous}&&&\\
+			mooring length&$l$&$40$ m&$\pm0.2$\\
+			mass floater$^a$&$m_b$&$80\:\%$&\\
+			stroke limit&$\varsigma_{lim}$&$\pm3.5$ m&\\
+			
+			\hline
+		\end{tabular}
+		\label{tab:parameters}
+		\caption{List of COERbuoy1 parameters. $^a$The mass is denoted relative to the buoyancy force at
+			equilibrium position. The remaining buoyancy force is
+			the pre-tension of the mooring.}
+\end{table}
+\paragraph{Stribeck friction}
+The machinery losses are simulated as a Stribeck friction curve, with static friction $F_{fr,s}$, dynamic friction $F_{fr,k}$, and a friction damping term $\gamma_f$:
+\begin{align}
+	\ddot{\varsigma}&=0\phantom{................} \text{, if }\dot{\varsigma}=0 \wedge |M\ddot{x}\vec{n}_{\varsigma}| <= F_{fr,s}\\
+	F_{m}&=F_{fr,k}+\gamma_f \dot{\varsigma} \text{, otherwise,}
+\end{align}
+with $M=m+m_a$.
+\paragraph{PTO}
+The PTO uses a rotational direct-driven generator. A gearbox the translatory stroke speed $\dot{\varsigma}$ into the angular generator speed $\omega_g$. The reactive power flow is assumed to set to zero ($I_d=0$) by the generator's internal controller. By this the generator becomes:
+\begin{align}
+	p&=0.5 E^2/(F_{pto} \dot{\varsigma})\\
+	q&=X^2\\
+	E&=c_\lambda \dot{\varsigma}\\
+	X&=c_L\dot{\varsigma}
+\end{align}
+
+%if (F_pto*dx>=0 and np.abs(dx) < 0.01):
+%dx=dx+1;
+
+%$R=R_c;$
+Then resolve for $R$:
+\begin{equation}
+	R^2=p R-q
+\end{equation}
+
+In generator mode the minium damping is limited by the internal resistance:
+\begin{equation}
+	R=\max(R_c,R)\text{, if }F_{pto}\dot{\varsigma}>0 \wedge R>0
+\end{equation}
+The actual load is then $R_l=R-R_c E/|E|$. The actual current is then calculated in relation to the current saturation limit:
+\begin{align}
+	I_1&=E/\sqrt{R^2+X^2}\\
+	\gamma&=|I_s/I_1|\\
+	D&=
+	\begin{cases}
+		2/\pi(\arctan(\gamma/\sqrt{1-\gamma})+\gamma \sqrt{1-\gamma^2})&\text{, if } \gamma<1\\	
+		1&\text{, else}\\
+	\end{cases}\\
+	X&=(c_L (1+(1-D)))\dot{\varsigma}\\
+	I&=E/\sqrt{R^2+X^2}\\
+\end{align}
+Finally the appplied generator force $F_{gen}$ and the absorbed electrical power $P_{abs}$ are:
+
+\begin{align}
+	F_{gen}&=E^2 R/(R^2+X^2)/\dot{\varsigma}\\
+	P_{abs}&=R_l I^2.
+\end{align}
+
+When exceeding the stroke limits $\pm \varsigma_{lim}$, the generated power cannot be utilised and is therefore not considered in the calculated overall energy output; reactive power put into the generator, however, is always subtracted from the total absorbed energy.
+\paragraph{Pre-tension}
+The pre-tension force $\vec{F}_{t}$ allows the buoy's gravity force, and therefore its mass, to be lower than the buoyancy force at the equilibrium position, and is calculated as the mismatch between the gravity and buoyancy forces at the equilibrium position:
+\begin{equation}
+	F_{t,j}=V_0 \rho g (1-c_{m,f})\text{,}
+\end{equation}
+where $V_0$ is the submerged volume at the equilibrium position, and $c_{m,f}\epsilon(0,1]$ is the ratio $m/(V_0\rho)$.
+\paragraph{Negative spring}
+A spring contradicting the buoyancy stiffness is installed between body and the anchored line. In mean position the spring, which has a constant force is compressed and all forces acts in horizontally, thus no force actually acts in between line and body. When the body is deflected, 
+\begin{equation}
+	\begin{split}
+		l&=\min(\max(-s_{fs},z),s_{fs})\\
+		F_{fs}&=c_{fs} \arctan(l/l_{fs})\text{,}
+	\end{split}
+\end{equation}
+with $s_{fs}$ the maximal spring length. $l_{fs}$ spring length at mean position and $c_{fs}$ the spring force at mean position.
+\begin{figure*}
+	\centering
+	\includegraphics[width=140mm]{NegativeSpring}
+	\caption{Sketch of the negative spring.}
+	\label{fig:nspring}
+\end{figure*}
+\paragraph{Braking force}
+The braking force $F_{br}$ opposes the direction of travel and can be set to an arbitrary value within the power limit $P_{br}^{max}$:
+\begin{equation}
+	F_{br}\dot{\varsigma}<P_{br}^{max}\text{.}
+\end{equation}
+\paragraph{Torsion spring}
+To limit the pitch motion a torsion spring is installed in the mooring joint, that pushes the mooring line back in equilibrium position:
+\begin{equation}
+	F_{sp}=c_p\alpha-d_p\dot{\alpha}\text{,}\label{eq:torsionspring}
+\end{equation}
+with $c_p$ being the stiffness and $d_p$ the spring damping.
+%\begin{figure}[h!]\label{tab:param_settings}%
+%	\begin{tabular}{|c|p{7cm}|p{2cm}|c|}%
+%		\hline
+%		parameter name & description & values & unit \\
+%		\hline
+%		negative\_spring\_force&constant force of the negative spring& 450000 & Ns/m \\
+%		negative\_spring\_lenth&Length of the spring; related to stiffness&1.6&m\\
+%		negative\_spring\_stroke&When exeeding this stroke length, the negative spring value is 0&5&m\\
+%		\hline
+%		viscous\_drag\_coefficent\_heave&drag coefficent in heave&0.2&-\\
+%		viscous\_drag\_coefficent\_surgee&drag coefficent in surge&0.2&-\\
+%		\hline
+%		mass\_percent\_floater&splits the buoyancy force into gravitational force and pre-tension force&0.8&m\\
+%		\hline
+%		generator\_Rc&internal resistance of the generator&2&$\Omega$\\
+%		generator\_c\_L&Inductance constant of the generator&60&-\\
+%		generator\_c\_lambda&Lambda factor of the generator&4000&-\\
+%		generator\_I\_s&saturation current of the generator&300&A\\
+%		\hline
+%		heave only&1-heave motion only; 0-heave and surge motion&0&-\\
+%		\hline
+%		friction\_force\_static&Static (when not moving) friction&30000&N\\
+%		friction\_force\_kinetik&Kinetik (when moving) friction&1500&N\\
+%		friction\_force\_damping&Velocity proportional friction&7500&Ns/m\\
+%		\hline
+%		l\_mooring&length mooring line&15&m\\
+%		\hline
+%	\end{tabular}
+%	\caption{Parameters of thex COERbuoy1 model}
+%\end{figure}
 
 \subsection{COERsimple}
 The equation of motion in heave ($x_y$), which is the only considered motion, is:
@@ -579,7 +802,7 @@ The equation of motion in heave ($x_y$), which is the only considered motion, is
 \end{align}
 where $F_g$ is the generator force, $F_h$ the hydrodynamic forces (includes: buoyancy, excitation and radiation force) and $F_m=m_b g$ the gravity force of the body, related to the body mass $m_b$ and the gravitational acceleration $g\sim9.81$. The added mass at infinity frequency is $m_a$, amd $F_b$ is the breaking force.
 \paragraph{Body shape}
-the body shape is the same as the COERbuoy1, where the profile is described in surge (x), heave (z) coordinates as follows (x,z): (0,-4.5), (3,-2), (3.7,-1), (4,0), (3.7,1), (3,2), (0,4.5).
+the body shape is the same as the COERbuoy1, where the profile (with rotatinal axis z) is described in surge (x), heave (z) coordinates as follows (x,z): (0,-4.5), (3,-2), (3.7,-1), (4,0), (3.7,1), (3,2), (0,4.5).
  \bibliographystyle{spphys}
  \bibliography{bibio2}
 \end{document}

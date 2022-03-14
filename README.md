@@ -1,31 +1,16 @@
-# COERbuoy
-### A realistic Wave Enegery Converter model to evaluate controllers
+# The COERbuoy platform
+### Body-exact simulation of heave-point absorber Wave Energy Converter - Version 0.3 beta 
+!Decay test sphere D=0.3m](decay_test.png)
 
-#### Fore more information, have a look at the [manual](https://github.com/SiHeTh/COERbuoy/raw/main/manual.pdf) ####
-#### Or see the basic_usage jupyter notebook. ####
 
-##### Version 0.3 beta #####
-
-NOTE: The commands how to run python might differ between systems, and the ones presented here might not work on every machine. Please refer to https://www.python.org/ to find the correct commands for your system.
 <br>
-## 1. Repository structure
-- COERbuoy (program data)
-   - data (WEC data)
-   - param (data were generated parameter files are saved)
-   - results (folder where results are saved)
-   - web (data for GUI)
-   - ... (source code)
-
-- examples (examples how to use COERbuoy)
-   - custom_WEC (example of a user generated WEC)
-   - custom controller (example of a custom controller in python and octave)
-   - use_python (how to use COERbuoy from within python)
-
-- dist (files for distribution)
-
-- LICENSE.txt
-- README.md (this readme file)
-- additional file for the setup configuration
+## 1. Learn how to use COERbuoy
+### 1.1 Basic usage
+For a quick guide into using COERbuoy, please see section 3: Run COERbuoy. If you use jupyther, there is a [notebook available](https://github.com/SiHeTh/COERbuoy/blob/main/basic_usage.ipynb) with a few examples. The most comprehensive overview over COERbuoy is given in the [manual](https://github.com/SiHeTh/COERbuoy/raw/main/manual.pdf).
+### 1.2 Writing a controller
+Please see the examples using python or MATLAB in the [example section](https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom_controller).
+### 1.3 Writing a WEC
+The inclusion of custom WECs is possible, but not offically suported. However, an example is [available](https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom_WEC).
 
 ## 2. Installation
 
@@ -42,6 +27,8 @@ Install COERbuoy using pip:
 | `python3 -m pip install COERbuoy`|
 
 ## 3. Run COERbuoy
+
+NOTE: The commands how to run python might differ between systems, and the ones presented here might not work on every machine. Please refer to https://www.python.org/ to find the correct commands for your system.
 
 Run graphical user interface:
 
@@ -75,9 +62,15 @@ Regular wave with height 1.5 m and period of 6 s and a linear generator damping:
 
 
 ## 4. Version history
-- 0\.1\.2 
-   - added compatibility with numpy version > 1.16
+- 0\.3
+   - fixed several bugs
+   - radiation wave depends on body motion not on relative wave-body motion
+   - new wave handling: negative time values describe transient time
+   - improvements in GUI
+   - added numpy example notebook
 - 0\.2
    - manual added
    - settings tab added in GUI
    - simplify use of custom controller (via new folder and automatical detection of ocatve/python interpreter)
+- 0\.1\.2 
+   - added compatibility with numpy version > 1.16
