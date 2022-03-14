@@ -196,3 +196,4 @@ class wavefield:
         
     def clear(self):
         self.dw.clear();
+        self.dw2.clear();

@@ -106,7 +106,7 @@ class Floater_BEM(Floater):
                     self.file.write(str(t)+","+str(eta)+","+str(abs(res[0][1]))+","+str(abs(FK))+","+str(abs(np.real(np.sum(m(wave.get_rad(t,x0),exc1[1])))))+","+str(abs(dP))+"\r\n");
                     self.t_old=t;
                 
-        Frad=[np.real(np.sum(m(wave.get_rad(t,x0),(exc1[0])))),np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1]))),0];#radiation force
+        Frad=[np.real(np.sum(m(wave.get_rad(t,x0),exc1[0]))),np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1]))),0];#radiation force
         ret=np.array(ret)+np.array(Frad);
             
         
