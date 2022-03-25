@@ -88,19 +88,14 @@ def start_simu (**kwargs):
     ctrl="";
     ctrlcmd="";
     wavedata=None;
-    #read settings
-    #with open(os.path.join(pkg_dir,"settings.txt")) as file:
-    #    data=json.load(file);
-    #    class_hydro=data.get("hydro","Floater");
-    #    WECfolder=data.get("WECfolder","COERbuoy.data.COERbuoy");
-   
+    
+    #load WEC module
     spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.wec_dir,"dynamics.py"));
     dyn_wec=importlib.util.module_from_spec(spec);
     spec.loader.exec_module(dyn_wec);
     
     print("Using the following WEC: "+utils.wec_dir);
 
-    #Floater.idname=filename;
     
     wec=dyn_wec.WEC();
     init_condition=np.zeros(wec.states).tolist()
@@ -143,15 +138,10 @@ def start_simu (**kwargs):
                     ctrl=kwargs["control"].replace(ctrlname,fullpath).split(" ");
                 
             if not host:
-                #if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
                 print("Start "+str(" ".join(ctrl)))
                 process=subprocess.Popen(ctrl)
                 ctrl="";
-                #else:
-                #    print("Start "+ctrl[0]+" "+ctrl[1])
-                #    process=subprocess.Popen(ctrlcmd)
-                #    ctrl="";
-            time.sleep(2);
+            time.sleep(3);
             interface=True;
     teval=0;
     
@@ -181,9 +171,6 @@ def start_simu (**kwargs):
     # ... or read wave data from file.
     elif "file" in kwargs:
         wavedata=wave_series.fromFile(kwargs["file"]);
-        #a=np.array(pandas.read_csv(kwargs["file"]));#"TestFull.csv", header=None))
-        #t=a[:,0];
-        #y=a[:,1];
         
     # if not specify, use default settings
     else:
@@ -193,16 +180,14 @@ def start_simu (**kwargs):
     if wavedata.te<=wavedata.t0:
         wavedata.te=wavedata.t[-1];
     
-       
-    #import matplotlib.pyplot as pyplt;
     
     omega_cut_off=wec.omega_cut_off;
     # Setting the wave (processed in a seperate module)
     wave1=wavefield.wavefield.set_wave(wavedata.y,wavedata.t,omega_cut_off);
-        #Set filename    
     
-    filename=wavedata.name.replace("_","")+"_p_"+f'{wave1.get_period():.2f}'+"_h_"+f'{wave1.get_height():.2f}'+"_"+re.split("[\\,/,\s]",ctrlname.replace("_","").replace(".",""))[-1]+"_"+re.split("[\\,/,.,-,\s]",utils.wec_dir.replace("_",""))[-1]+"_"+utils.class_hydro.replace("_","")+".csv";
-    if "name" in kwargs:
+    #Set filename
+    filename=wavedata.name.replace("_","")+"_p_"+f'{wave1.get_period():.2f}'+"_h_"+f'{wave1.get_height():.2f}'+"_"+re.split("[\\,/,\s]",ctrlname.replace("_","").replace(".",""))[-1]+"_"+re.split("[\\,/,.,-,\s]",utils.wec_dir.replace("_",""))[-1]+"_"+utils.class_hydro.replace("_","")+".csv";#Standard format
+    if "name" in kwargs: #use custom file name if specified
         if os.path.isdir(kwargs["name"]):
             filename=os.path.join(kwargs["name"],filename);
         elif kwargs["name"]=="":
@@ -261,7 +246,6 @@ def start_simu (**kwargs):
       # the first time a specific time is passed
       # This is not _exact_, but a good compramise between computational complexity and accuracy
       if utils.dt_controller<0 or t-dynamics.tcontrol>=utils.dt_controller-0.05*utils.dt_controller or t-dynamics.tcontrol<0:
-          #print(t-dynamics.tcontrol)
           tw=100;
           tw1=tw-1;
           tseq=np.linspace(t-tw1/4,t,int(tw));
@@ -298,7 +282,8 @@ def start_simu (**kwargs):
               dynamics.PTOt=[t]
               dynamics.PTO=[-wec.get_translator_speed(x)*dynamics.damping];
               dynamics.brake=[0];
-      print(str(np.round(100*t/dynamics.duration,0))+"% completed", end="\r");
+      #Print progress
+      print("{:.0f}".format(100*t/dynamics.duration,0)+"% completed", end="\r");
       i=np.abs(np.array(dynamics.PTOt)-t).argmin();
       # Send the data to the WEC
       out=wec.Calc(t,wave1,x,dynamics.PTO[i],dynamics.brake[i],dynamics.ulast);
@@ -324,10 +309,6 @@ def start_simu (**kwargs):
                 print("Start "+str(" ".join(ctrl)))
                 process=subprocess.Popen(ctrl)
                 ctrl="";
-                #else:
-                #    print("Start "+ctrlcmd+" "+ctrl)
-                #    process=subprocess.Popen([ctrlcmd,ctrl])
-                #    ctrl="";
             conn_ctrl.openH();
         else:
             conn_ctrl.openC();
@@ -345,19 +326,20 @@ def start_simu (**kwargs):
     pandas.DataFrame(np.array([sol.t[:],np.sum(np.real(wave1.get(sol.t.reshape(sol.t.size,1),0)[0]),1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
     
     
+    #For debugging: plot simulation results
     #import matplotlib.pyplot as plt
     #plt.figure();
     #plt.plot(sol.t[:],np.transpose([np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:]]));
     #plt.show();
     
-    # free data from the wave and the WEC
+    # free data in memory
     wave1.clear();
     del wave1;
     wec.release();
     
-    #Cut data so that only data after transient time (if applicable) is considered for power calculation
+    #Cut data to exclude transient data (if applicable) for power calculation
     s1=np.argmax(sol.t>=0)
-    # Output the absorbed power
+    # Print the absorbed power
     power=(sol.y[8,-1]-sol.y[8,s1])/(sol.t[-1])
     print("Mean absorbed power: "+str((power/1000).round(2))+" kW")
     
@@ -394,7 +376,7 @@ def reg_wave(H=1,p=10,n0=8,n=8,ne=1):
 
 # Brettschneider wave (significant wave height, energy period, name, control)
 def bretschneider_wave(Hs=1,p=6,n0=4,n=6,ne=1):
-    print("Brettschneider wave")
+    print("Bretschneider wave")
     Hs=float(Hs);
     p=float(p);
     omega=np.linspace(0.001,4,200);

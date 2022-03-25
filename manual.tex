@@ -16,7 +16,7 @@
 \usepackage[top=80pt,bottom=100pt,left=80pt,right=80pt]{geometry}
 
 %opening
-\title{Manual for COERbuoy1 model and benchmark tool}
+\title{The COERbuoy(1) handbook}
 \author{Centre of Ocean Energy Research, Maynooth University}
 \newtcolorbox{example}[1]{colback=blue!10!white,colframe=blue!20!white,fonttitle=\bfseries,coltitle=black,
 	toprule=3pt,
@@ -551,6 +551,53 @@ conn_model.close();
 \end{lstlisting}
 \caption{Simple optimal damping controller for the COERbuoy1 model written in python.}\label{fig:controller_python}
 \end{figure}
+\chapter{Hydrodynamic models}
+COERbuoy provides two built-in hydrodynamic models, all based on linear potential theory and linear hydrodynamics and working in time-domain see Tbale \ref{tab:hydrodynamic_features}:
+\begin{enumerate}
+	\item A linear model, where all hydrodynamic parameters are linearised about the mean position.
+	\item A body-exact appraoch, with hydrodynamic parameters evaluated at the instantanious position. A look-up-table with pre-calculated values is used to get a computational effective model.
+\end{enumerate} 
+In the next section the theory is briefly presented.
+\section{Hydrodynamic forces}\label{ssec:hydrodynamicForces}
+Linear hydrodynamics allows to describe ocean wave as a sum of sinusoidal waves with different wave frequencies, thus 
+\begin{equation}
+	\begin{split}\label{eq:FrequencyTime}
+		\pmb{\hat{\eta}}(\omega)&=\mathcal{F}(\eta(t))\\
+		\pmb{\hat{\eta}}_{tx}(\omega)&=|\pmb{\hat{\eta}}(\omega)| \cos(\omega t_x + \angle\pmb{\hat{\eta}}(\omega))\\
+		\eta(t_x) &=\Re\left(\int_{\omega}\pmb{\hat{\eta}}(\omega,t_x)d\omega\right)\text{,}
+	\end{split}
+\end{equation}
+with $\hat{\pmb{\eta}}$ being the (complex) frequency spectrum of the wave. $\hat{\pmb{\eta}}_{tx}$ is the instantaneous wave spectrum at time $t_x$ and $\eta(t_x)$ the instantaneous wave height.
+
+Furthermore linear hydrodynamics allows to split the hydrodynamic forces into three components: (1) the undisturbed incoming wave, (2) the scattered wave field by the non-moving buoy, and (3) the radiated wave caused by the buoy's movement \cite{Falnes}.
+The undisturbed incoming and the scattered wave act on the not moving body and result in the excitation force:
+\begin{align}
+	F_{hy,j}(t)&=\hat{\pmb{h}}_{ex,j}(x(t),z(t)) \hat{\pmb{\eta}}\label{eq:Fe}\text{,}
+\end{align}
+with $\hat{\pmb{h}}_{ex}$ being the complex spectral excitation force coefficients, evaluated at the instantaneous body position $(x(z),z(t))$ and $j$ being the direction.
+The radiated wave is calculated similarly 
+\begin{equation}\label{eq:cummings}
+	\begin{split}
+		F_{r,j}(t_x)=\int_{0}^{t_x}&\left(\int_{\omega} c_{h} \pmb{h}_{r,j}(\tau)\cos(\omega (t_x-\tau))d\omega\right)\:\dot{x}_j(\tau)\delta(\tau)d\tau\text{ ,}
+	\end{split}
+\end{equation}
+with $c_h$ a coefficients transforming $|\hat{\pmb{h}}_{ex,j}|^2$ into the radiation resistance in spectral domain $\pmb{h}_{r,j}$ (Haskind relation):
+\begin{equation}
+	c_h=2\pi(\omega k)/(4\pi g^2 \rho)\text{.}\label{eq:Haskind3}
+\end{equation}
+Furthermore, $\dot{x}_{j}$ is the buoy's velocity in degree of freedom $j$ and $\delta$ is the Dirac impulse.
+
+The buoyancy force is obtained by integrating the static pressure over the wetted surface of the buoy, as described in \cite{NL_FK}.
+\begin{figure}[h!]\label{tab:hydrodynamic_features}
+\begin{tabular}{c c c c c c c}
+	name & Froude-Krylov & diffraction & radiation & added mass & slamming & buoyancy\\
+	\hline
+	linear&mean pos.& mean pos. & mean pos. & mean pos. & no & mean pos. \\
+	body-exact&instant. pos.& instant. pos.& instant. pos. & instant. pos. & yes & instant. pos. 
+\end{tabular}
+\caption{The hydrodynamic models available}
+\end{figure}
+
 \chapter{Controller and WEC models}
 \section{Controller}
 One aim while developing the COERbuoy platform was to simplify the process to write external controller for it, see the Control Interface in Chapter \ref{control_interface}. There are already some controllers available in the COERbuoy repository\footnote{https://github.com/SiHeTh/COERbuoy/tree/main/examples/custom\_controller}. In this chapter these controllers are presented.

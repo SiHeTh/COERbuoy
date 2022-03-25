@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Floater_BEM_LUT.py - Calculating hydrostatic- and dyanmic forces based on BEM data
+# Floater_BEM_LUT.py - Calculating body-exact hydrostatic- and dyanmic forces based on BEM data calculated at different body positions
 # Initally designed to handle three degree of freedom (3D) heave, surge and sway, but only two
 # (heave, surge) are used.
-# 2020/2021/2022 COER Laboratory, Maynooth University
+# 2020/2021/2022 COER laboratory, Maynooth University
 # in cooperation with CorPower Ocean AB
 #
 # Author:
@@ -24,13 +24,10 @@ import os;
 pi=np.pi;
 
 class Floater_BEM(Floater):    
-    BEMexc=np.array([[],[]]);
+    BEMexc=np.array([[],[]]);#initialising hydrodynamic look-up-tables
     BEMrad=np.array([[],[]]);
     BEMam=np.array([[],[]]);
-    rad_set=False;
-    rad_old=None;
-    p_old=np.NaN;
-    t_old=-0.01;
+    t_old=-0.01; #time variable that is set to log only in intervals
     
     def __init__ (self, xi, g, depth, CoG, *args):
         super().__init__(xi, g, depth, CoG, *args);
@@ -38,9 +35,9 @@ class Floater_BEM(Floater):
         
     #calculate hydrodynamic parmeters from heave, surge, pitch, surface elevation
     def Calculate(self, z0, x0, delta0, eta):
-        fb=np.array([0,0,0]);
-        
-        z0=-z0;
+        #1) buoyancy calculation
+        fb=np.array([0,0,0]);#buoyancy array (surge, heave, pitch)
+        z0=-z0;#For some reasons the sign is wrong; complain with the coder...
         
         #Get buoyancy force for each element
         for e in self.elements:
@@ -49,7 +46,8 @@ class Floater_BEM(Floater):
             en=[self.omega*0,self.omega*0,self.omega*0];
             return [fb,en,np.array([en,en,en]),[0,0,0]]
         
-        draft=eta+z0;#current submergence
+        #2) get hydrodynamic parameters from LUT
+        draft=eta+z0;#get current submergence
         res = LUT.get_fromLUT(draft,0);
         exc1 = res[0]*np.cos(res[1])+1j*res[0]*np.sin(res[1]);
        
@@ -72,6 +70,7 @@ class Floater_BEM(Floater):
         res=self.Calculate(z0, x0, 0*delta0, eta);#Calculate coefficents
         dam=np.array([0,0,0]);
         ret=[0,0,0];#return array
+        
         def m(a,b):
             return a.real*b.real+a.imag*b.imag;
         
@@ -80,15 +79,16 @@ class Floater_BEM(Floater):
         am1 = np.array(res[3]);#added mass @ inf
         
       
-        #Generate wave from movement
+        #Calculate the instantanious radiated wave caused by the body's velocity
         if (np.sum(np.abs(exc1))>0):
+            #Using Haskind relation to get radiation from excitation
             c_1=2*3.14*(self.omega*self.omega*self.omega/self.g)/(4*pi*self.g**2*self.rho*1);
             r0=(c_1*exc1[0].real+1j*c_1*exc1[0].imag)*v[0];#Using Hashkind to get radiation (numerically best solution)
             r1=(c_1*exc1[1].real+1j*c_1*exc1[1].imag)*v[1];
-            #axisymetric devcies do not really have cross terms for radiation
-            
+            #axisymetric devices do not really have cross terms for radiation
             wave.add_diracWave(-2/np.pi*r0,t,True);
             wave.add_diracWave2(-2/np.pi*r1,t,True);
+            #TODO: Add pitch
             
         #Calculate hydro forces for each DOF
         dP=0;
@@ -99,11 +99,11 @@ class Floater_BEM(Floater):
             
             if i==1:#added mass only implemented for heave
                 v=v[i];
-                if abs(v) > 0:
+                if abs(v) > 0:#slamming force
                     dP=(am1[i]-self.Calculate(z0+v/abs(v)*0.01,x0,0*delta0,eta)[3][i])/0.01*v;
                     ret[i]=ret[i]+dP;
-                if self.file and (t-self.t_old)>0.09:
-                    self.file.write(str(t)+","+str(eta)+","+str(abs(res[0][1]))+","+str(abs(FK))+","+str(abs(np.real(np.sum(m(wave.get_rad(t,x0),exc1[1])))))+","+str(abs(dP))+"\r\n");
+                if self.file and (t-self.t_old)>0.09:#code to log the forces (for debugging and in-detail analysis)
+                    self.file.write(str(t)+","+str(eta)+","+str(abs(res[0][1]))+","+str(abs(FK))+","+str(abs(np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1])))))+","+str(abs(dP))+"\r\n");
                     self.t_old=t;
                 
         Frad=[np.real(np.sum(m(wave.get_rad(t,x0),exc1[0]))),np.real(np.sum(m(wave.get_rad2(t,x0),exc1[1]))),0];#radiation force

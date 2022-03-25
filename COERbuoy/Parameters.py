@@ -76,7 +76,9 @@ class parameters():
             wave=wavefield.wavefield(self.omega*0,self.omega*0,self.omega);
             x=np.zeros(self.wec.states);
             x[1]=v;
-            return self.wec.Calc(0,wave,x,-1*f,0,[1,1,1])[8]/(f*v);
+            [f1,p]=self.wec.Calc(0,wave,x,-1*f,0,[1,1,1])[7:9];
+            print(p)
+            return p/(np.max([f,f1])*v);
     
     def dic_param(self):
         with open(self.wec.file) as file:
