@@ -31,7 +31,6 @@ g=9.81; #gravity acceleration
 rho=1000; #density of water
 
 def pol2cart(r,omega,dr,domega,ddr,ddomega):
-    #m_rot=np.array([[np.cos(alpha), -1*np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]])
       
     x1=r*np.sin(omega);
     x2=r*np.cos(omega);
@@ -41,7 +40,6 @@ def pol2cart(r,omega,dr,domega,ddr,ddomega):
     ddx2=(ddr*np.sin(omega)+dr*(np.cos(omega)*domega))+(dr*domega*np.cos(omega)+r*ddomega*np.sin(omega)-r*domega*np.sin(omega)*domega);
     return [np.array([x1,x2]),np.array([dx1,dx2]),np.array([ddx1,ddx2])]
 def pol2cart2(r,omega,dr,domega,ddr,ddomega):
-    #m_rot=np.array([[np.cos(alpha), -1*np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]])
       
     x1=r*np.sin(omega);
     x2=r*np.cos(omega);
@@ -57,7 +55,7 @@ class WEC():
     omega_cut_off=3.2; #highest frequency used for calculation    
     
     states=10;
-    file=os.path.join(os.path.dirname(__file__),"floater.txt");#floaterfile;#Path(__file__).parent()/"floater.txt";
+    file=os.path.join(os.path.dirname(__file__),"floater.txt");
     acc=0;
     force_sensor=0;
     
@@ -177,8 +175,6 @@ class WEC():
             
         p=E**2/(F_pto*dx)*0.5;
         q=X**2;
-        #p=(self.gen_clambda*dx)**2*dx*0.5;
-        #q=F_pto*(self.gen_cL*dx)**2/((self.gen_clambda*dx)**2*dx)
         R=self.gen_Rc;
         
         #calculate the required resistance
@@ -203,9 +199,7 @@ class WEC():
             X=(self.gen_cL*(1+(1-D)))*dx;
             I=E/np.sqrt(R**2+X**2);
         
-        Pabs=-Rl*I**2;#print([E,R,Rl])
-        #print(np.round(dx),np.round(-E**2*R/(R**2+X**2)*1/(dx)),np.round(F_pto,1))
-        #return [-E**2*R/(R**2+X**2)*1/(dx), Pabs];
+        Pabs=-Rl*I**2;
         return [-E**2*R/(R**2+X**2)*1/(dx), Pabs];
     #main calculation function, called by ODE solver from main programm
     def Calc(self,t,wave,x,PTO_force,brake,ulast):
@@ -219,16 +213,11 @@ class WEC():
       #x[8] - absorbed energy
       
       
-      #if np.abs(x[2])>self.alpha_lim*1.1:
-      #    x[2]=np.min([self.alpha_lim,np.max([-self.alpha_lim,x[2]])]);
-      #x[3]=0;
-      alpha=x[2];
-      stroke=x[0];
+      alpha=np.max([np.min([x[2],1.5]),-1.5]);
+      stroke=np.max([np.min([x[0],4]),-4]);
       
-      #if PTO_force>0.1:
-      #    PTO_force=PTO_force+1;
       
-      #Rot. matrix: Global corrdinates (hydro-forces) into body coordinates (PTO forces)
+      #Rot. matrix: Global coordinates (hydro-forces) into body coordinates (PTO forces)
       m_rot=np.array([[np.cos(alpha), -1*np.sin(alpha)], [np.sin(alpha), np.cos(alpha)]])
       
       heave=(stroke+self.l)*np.cos(alpha)-self.l;
@@ -255,7 +244,6 @@ class WEC():
       f_hy[0][0]=-1*f_hy[0][0]+Fdrags;
       f_hy[0][1]=f_hy[0][1]+Fdrag-self.mb*g*self.mass;
       F_radax = np.matmul(m_rot,f_hy[0][:2]);
-      #print([f_hy[0][0],F_radax[0]])
       
       #PTO-forces:
       #negative spring, including pre-tension
@@ -270,24 +258,15 @@ class WEC():
           
       #Calculate all inertia (physical mass+added mass)
       am=np.abs(np.real(np.matmul(m_rot,f_hy[1][:2])))#get components of added mass
-      #mah=np.real(f_hy[1][0]*np.sin(np.abs(alpha))+f_hy[1][1]*np.cos(alpha))
-      #mas=np.real(f_hy[1][0]*np.cos(np.abs(alpha))+f_hy[1][1]*np.sin(alpha))
       mass_sum_floater=(self.mass*self.mb+np.real(am[1]));
       
           
       F_sum_floater=F_radax[1]+F_gen+WS+Fd_add*0+brake;
-      #print([f_hy])#,F_gen,WS,Fd_add,x[1],r1,x[0],F_sum_floater])
       F_sum_floater=np.sum(np.real(F_sum_floater));
       self.force_sensor=F_sum_floater;
       
       
-      #Fill dx vector
-      
-      
-      #F_gen_global = np.matmul([0,F_gen+WS+Fd_add+brake],m_rot);
-      #accel_global=(F_radax-F_gen_global)/np.matmul([0,self.mass*self.mb],m_rot);
-      
-      
+      #Fill dx vector      
       dx=np.zeros(10);
       #if machinery or static friction too high: PTO-stuck, no speed, no force
       if np.abs(F_sum_floater-brake)<brake or (np.abs(F_sum_floater)<self.fr_s and np.abs(x[1])<0.01):
@@ -299,23 +278,32 @@ class WEC():
           dx[1]=(F_sum_floater)/mass_sum_floater;
           dx[0]=x[1];
           
-      dx[3]=(self.l+stroke)*(F_radax[0])/((self.mass+am[0])*(self.l+stroke)**2)-0.025*x[2]-0.5*x[3];
-      #print([F_radax[0],f_hy[0][0],self.mb*g*self.mass*np.sin(x[2])])
-      #print(x[2])
-      #dx[3]=f_hy[0][0];
+      dx[3]=(self.l+stroke)*(F_radax[0])/((self.mass+am[0])*(self.l+stroke)**2)-self.c_p*x[2]-self.d_p*x[3];
       dx[2]=x[3];
-              
-      #print([F_radax,cx,x[0],x[2],dx[3]])
       
       if (x[0])>4 and dx[0]>0:
           dx[0]=0;
+          x[0]=4;
           if dx[1]>0:
               dx[1]=0;
       
       if (x[0])<-4 and dx[0]<0:
           dx[0]=0;
+          x[0]=-4;
           if dx[1]<0:
               dx[1]=0;
+              
+      if (x[2])>1.5 and dx[2]>0:
+          dx[2]=0;
+          x[2]=1.5;
+          if dx[3]>0:
+              dx[3]=0;
+      
+      if (x[2])<-1.5 and dx[2]<0:
+          dx[2]=0;
+          x[2]=-1.5;
+          if dx[3]<0:
+              dx[3]=0;
           
           
       dx[3]=dx[3]*self.heave_only;
@@ -325,8 +313,7 @@ class WEC():
       dx[7]=0;
       dx[6]=0;
       dx[7]=-F_gen;
-      self.acc=[dx[1]*np.sin(alpha),dx[1]*np.cos(alpha),0];#*np.cos(x[2]);
-      #self.acc=[dx[1],dx[3],0];#*np.cos(x[2]);
+      self.acc=[dx[1]*np.sin(alpha),dx[1]*np.cos(alpha),0];
       dx[8]=-Pabs;
       return dx;
       
