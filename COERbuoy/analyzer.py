@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # COERbuoy - Data Analyzer
-# A small library to simlify the analyses of dta prodiced with the COERbuo platform;
+# A small library to simplify the analyses of dta prodiced with the COERbuo platform;
 # It is assued that the standard naming sheme is used
 
 # 2021 COER Laboratory, Maynooth University
@@ -15,8 +15,11 @@
 import os;
 import pandas;
 import numpy as np;
-import matplotlib.pyplot as plt;
 import warnings;
+try:
+    import matplotlib.pyplot as plt;
+except:
+    plt=None;
 
 def quartil (a, p):
     a=np.abs(a);
@@ -67,7 +70,9 @@ class Analyzer():
                         "k":[k],
                         "k_rel":[k_rel],
                         "model":[info[7]],
-                        "data":[data]};
+                        "data":[data],
+                        "name":[f],
+                        "file":[os.path.join(folder,f)]};
                              
                         if abs(data[2,-1])>1e2:#Stuff got instable
                             raise  	ValueError;
@@ -75,8 +80,6 @@ class Analyzer():
                             self.table=pandas.DataFrame(row);
                         else:
                             self.table=self.table.append(pandas.DataFrame(row));
-                            #print(self.table);
-                    
                     except:
                         warnings.warn("File "+str(f)+" is malformatted.");
     def get_set(self,wtype=None,p=None,H=None,ctrl=None,WEC=None,model=None):
@@ -85,11 +88,16 @@ class Analyzer():
             if e is not None:
                 if isinstance(e,float):
                     t0=t0[(t0[s]>e-0.4) & (t0[s]<e+0.4)]; # bitwise & is equal to logical-and for booleans
+                elif isinstance(e,list):
+                    t0=t0[t0[s].isin(e)];
                 else:
                     t0=t0[t0[s]==e];
-        #print(t0);
         return t0;
     def plot(self,xaxis,yaxis,group,t0,**kwargs):
+        if plt is None:
+            print("Matplotlib package required to plot graphs!");
+            raise ModuleNotFoundError;
+            return 0;
         plt.figure();
         if "colors" in kwargs:
             c=kwargs["colors"];
@@ -104,14 +112,12 @@ class Analyzer():
         plt.ylabel(self.d.get(yaxis,yaxis));
         plt.title(kwargs.get("title",""));
         plt.legend(gps)
-        #plt.legend(t0[group])
         plt.show()
     def plot_time(self,i,name,t0,**kwargs):
         t0=t0.sort_values(by=["model"]);
         if "axes" in kwargs:
             axes=kwargs["axes"]
         else:
-            #plt.figure()
             fig,axes=plt.subplots(1,1)
         if "colors" in kwargs:
             c=kwargs["colors"];
@@ -146,6 +152,8 @@ class Analyzer():
 if __name__=="__main__":
     a=Analyzer();
     a.read_folder("/home/gast/Dokumente/Validation/data");
+    
+    abcd=a.table.to_json(orient="records");
     b=a.get_set(None,None,0.5,"none","COERsimple",None);
     a.plot("p","RAO","model",b,title="Optimal damping")
     b=a.get_set("regular",None,0.5,"controllerreactivepy","COERsimple",None);
