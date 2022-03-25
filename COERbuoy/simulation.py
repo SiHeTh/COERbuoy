@@ -319,11 +319,12 @@ def start_simu (**kwargs):
     # Start the ODE-solver
     sol = solve_ivp(dynamics,[0,wavedata.te],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=100,atol=100)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
     print("Elapsed time :"+str(time.time()-t_start)+"\n");
+    tw=sol.t;
     sol.t=sol.t+wavedata.t0;
 
     
     # Write the solution of the data frame
-    pandas.DataFrame(np.array([sol.t[:],np.sum(np.real(wave1.get(sol.t.reshape(sol.t.size,1),0)[0]),1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
+    pandas.DataFrame(np.array([sol.t[:],np.sum(np.real(wave1.get(tw.reshape(tw.size,1),0)[0]),1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
     
     
     #For debugging: plot simulation results
@@ -375,7 +376,7 @@ def reg_wave(H=1,p=10,n0=8,n=8,ne=1):
     return wave_series.fromLists(np.append(t,[t2-ne*p]),np.append(y,y[-1]),"regular");
 
 # Brettschneider wave (significant wave height, energy period, name, control)
-def bretschneider_wave(Hs=1,p=6,n0=4,n=6,ne=1):
+def bretschneider_wave(Hs=1,p=6,n0=4,n=10,ne=1):
     print("Bretschneider wave")
     Hs=float(Hs);
     p=float(p);
