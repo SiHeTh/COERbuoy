@@ -1,5 +1,6 @@
 # The COERbuoy platform
-### Body-exact simulation of heave-point absorber Wave Energy Converter - Version 0.3 beta 
+### Version 0.3 - beta --- please notice that PyPi (pip) is still on version 0.2
+### Body-exact simulation of heave-point absorber Wave Energy Converter
 ![Decay test sphere D=0.3m](decay_test.png)
 
 
