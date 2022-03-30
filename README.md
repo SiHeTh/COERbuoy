@@ -3,7 +3,7 @@
 ### Body-exact simulation of heave-point absorber Wave Energy Converter
 ![Decay test sphere D=0.3m](decay_test.png)
 
-Curious? Try the [online demonstrator.](coerbuoy.maynoothuniversity.ie)
+Curious? Try the [online demonstrator.](http://coerbuoy.maynoothuniversity.ie)
 
 ## 1. Learn how to use COERbuoy
 ### 1.1 Basic usage
