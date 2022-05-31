@@ -99,15 +99,18 @@ class Analyzer():
             raise ModuleNotFoundError;
             return 0;
         plt.figure();
+        scaley=1;
         if "colors" in kwargs:
             c=kwargs["colors"];
         else:
             c=['r','g','b','y','k']*5;
+        if "scaley" in kwargs:
+            scaley=kwargs["scaley"];
         t0=t0.sort_values(by=[xaxis,group]);
         gps=t0[group].unique().tolist();
         for i,e in t0.iterrows():
             i=gps.index(e[group]);
-            plt.plot(e[xaxis],e[yaxis],c[i]+'o');
+            plt.plot(e[xaxis],e[yaxis]*scaley,c[i]+'o');
         plt.xlabel(self.d.get(xaxis,xaxis));
         plt.ylabel(self.d.get(yaxis,yaxis));
         plt.title(kwargs.get("title",""));
@@ -115,6 +118,8 @@ class Analyzer():
         plt.show()
     def plot_time(self,i,name,t0,**kwargs):
         t0=t0.sort_values(by=["model"]);
+        sy=None;
+        scaley=1;
         if "axes" in kwargs:
             axes=kwargs["axes"]
         else:
@@ -123,6 +128,10 @@ class Analyzer():
             c=kwargs["colors"];
         else:
             c=['r','g','b','y','k']*5;
+        if "scaley" in kwargs:
+            scaley=kwargs["scaley"];
+        if "symbols" in kwargs:
+            sy=kwargs["symbols"];
         
         k=0;
         for j,t in t0.iterrows():
@@ -136,11 +145,17 @@ class Analyzer():
                 
                 
             if k==0:
-                axes.plot(t.data[0,s1:s2],t.data[1,s1:s2],"k--");
+                axes.plot(t.data[0,s1:s2],t.data[1,s1:s2]*scaley,"k--");
             value0=0;
             if i>6:
-                value0=t.data[i,s1];
-            axes.plot(t.data[0,s1:s2],t.data[i,s1:s2]-value0,c[k],linewidth=(len(t0)-k)*1.25+0.5);
+                value0=t.data[i,s1]*scaley;
+            if sy is None:
+                axes.plot(t.data[0,s1:s2],t.data[i,s1:s2]*scaley-value0,c[k],linewidth=(len(t0)-k)*1.25+0.5);
+            else:
+                nk=int((s2-s1)/4);
+                st=int(nk/len(t0));
+                axes.plot(t.data[0,s1:s2],t.data[i,s1:s2]*scaley-value0,c[k],linewidth=1);
+                axes.plot(t.data[0,s1+k*st:s2:nk],t.data[i,s1+k*st:s2:nk]*scaley-value0,c[k]+sy[k]);
             k=k+1;
         axes.legend(["Wave"]+t0[name].tolist())
         axes.set_xlabel("time [s]");
@@ -154,16 +169,16 @@ if __name__=="__main__":
     a.read_folder("/home/gast/Dokumente/Validation/data");
     
     abcd=a.table.to_json(orient="records");
-    b=a.get_set(None,None,0.5,"none","COERsimple",None);
-    a.plot("p","RAO","model",b,title="Optimal damping")
-    b=a.get_set("regular",None,0.5,"controllerreactivepy","COERsimple",None);
-    a.plot("p","P","model",b,title="Reactive control")
-    b=a.get_set("regular",None,3.1,"controllerreactivepy","COERsimple",None);
-    a.plot("p","P","model",b,title="Reactive control")
-    b=a.get_set(None,None,0.5,"controllerdampingpy","COERsimple",None);
-    a.plot("p","P","model",b,title="Optimal damping")
-    b=a.get_set(None,None,3.1,"controllerdampingpy","COERsimple",None);
-    a.plot("p","P","model",b,title="Optimal damping")
+    #b=a.get_set(None,None,0.5,"none","COERsimple",None);
+    #a.plot("p","RAO","model",b,title="Optimal damping")
+    #b=a.get_set("regular",None,0.5,"controllerreactivepy","COERsimple",None);
+    #a.plot("p","P","model",b,title="Reactive control")
+    #b=a.get_set("regular",None,3.1,"controllerreactivepy","COERsimple",None);
+    #a.plot("p","P","model",b,title="Reactive control")
+    #b=a.get_set(None,None,0.5,"controllerdampingpy","COERsimple",None);
+    #a.plot("p","P","model",b,title="Optimal damping")
+    #b=a.get_set(None,None,3.1,"controllerdampingpy","COERsimple",None);
+    #a.plot("p","P","model",b,title="Optimal damping")
     
     b=a.get_set("regular",4,0.5,"controllerdampingpy","COERsimple",None);
-    a.plot_time(2,"model",b,time=[0,22],title="Stroke [m] for 0.5m, 4s, opt. damping")
+    a.plot_time(2,"model",b,time=[0,22],title="Stroke [m] for 0.5m, 4s, opt. damping", symbols=["-","*","h"])
