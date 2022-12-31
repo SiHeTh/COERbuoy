@@ -89,10 +89,16 @@ def start_simu (**kwargs):
     ctrlcmd="";
     wavedata=None;
     
-    #load WEC module
+    #load WEC module    
+    if "wec" in kwargs:
+        utils.wec_dir=utils.WECpath(kwargs["wec"]);
     spec=importlib.util.spec_from_file_location("dynamics.py",os.path.join(utils.wec_dir,"dynamics.py"));
     dyn_wec=importlib.util.module_from_spec(spec);
     spec.loader.exec_module(dyn_wec);
+    
+    
+    if "hydro" in kwargs:
+        utils.class_hydro=utils.WECpath(kwargs["wec"]);
     
     print("Using the following WEC: "+utils.wec_dir);
 
@@ -375,14 +381,14 @@ def reg_wave(H=1,p=10,n0=8,n=8,ne=1):
     y=H/2*np.cos(2*np.pi/p*(t-t0))
     return wave_series.fromLists(np.append(t,[t2-ne*p]),np.append(y,y[-1]),"regular");
 
-# Brettschneider wave (significant wave height, energy period, name, control)
+# Bretschneider wave (significant wave height, energy period, name, control)
 def bretschneider_wave(Hs=1,p=6,n0=4,n=10,ne=1):
     print("Bretschneider wave")
     Hs=float(Hs);
     p=float(p);
     omega=np.linspace(0.001,4,200);
     omega_m=2*np.pi/(p/0.856);
-    S=5/16*(omega_m**4)/(omega**5)*(Hs**2)*np.exp(-5*(omega_m**4)/4/(omega**4))
+    S=5/16*(omega_m**4)/(omega**5)*(Hs**2)*np.exp(-5*(omega_m**4)/(4*omega**4))
     t0=-p*n0;
     t2=p*n;
     t=np.arange(t0,t2,1/(omega_cut_off*np.pi))
@@ -400,9 +406,10 @@ def get_WEC_data():
 if __name__=="__main__":
         
     #Few examples how to run different tests:
-    #t=np.linspace(0,10,100);
+    t=np.linspace(0,10,100);
     #start_simu(time=t, wave=np.sin(t/10), name="test", t0=0, control="TCP", host=True);
-    decay_test([1, 0, 0],"decay1.csv",20,"linear")
+    #decay_test([1, 0, 0],"decay1.csv",20,"linear")
+    start_simu(time=t,wave=np.sin(t/10),name="test123", t0=0, init=[0, 0, 0], control="linear" , wec="[data.COERsimple]", hydro="Floater_BEM")
     #bretschneider_wave(1,3).to_file("testwave1.csv")
     #start_simu(wave=reg_wave(1,5),control="controller_damping.py 5")
     #start_simu(file="testwave1.csv",name="output.csv",control="linear")
