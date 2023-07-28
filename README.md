@@ -1,5 +1,5 @@
 # The COERbuoy platform
-### Version 0.3
+### Version 0.3.5
 ### Body-exact simulation of heave-point absorber Wave Energy Converter
 ![Decay test sphere D=0.3m](decay_test.png)
 
@@ -67,6 +67,8 @@ Regular wave with height 1.5 m and period of 6 s and a linear generator damping:
 
 
 ## 4. Version history
+- 0\.3\.5
+   - added computational fast estimation of the hydrodynamic parameter (without using the boundary element method)
 - 0\.3
    - fixed several bugs
    - radiation wave depends on body motion not on relative wave-body motion

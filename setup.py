@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
    name='COERbuoy',
-   version='0.3',
+   version='0.3.5',
    author='Simon H. Thomas',
-   author_email='simon.thomas.2021@mumail.ie',
+   author_email='sthomas20@web.de',
    packages=['COERbuoy'],
    url='http://coerbuoy.maynoothuniversity.ie',
    license='LICENSE.txt',

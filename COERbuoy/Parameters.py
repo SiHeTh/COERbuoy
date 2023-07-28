@@ -41,7 +41,7 @@ class parameters():
     
     def init_hydro(self,omega):
         g=9.81;
-        self.omega=np.array(omega);
+        self.omega=np.array(omega).flatten();
         xi=self.omega*self.omega/g;
         #Initialize WEC
         self.wec.load_buoy(getattr(Floater,self.classhydro),xi,300,0);

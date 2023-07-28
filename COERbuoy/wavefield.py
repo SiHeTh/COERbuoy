@@ -75,7 +75,7 @@ class wavefield:
     @classmethod
     def set_wave(cls,y, t, cut_off):
       #Window the wave to avoid hard cuts, leading to high frequencies after FFT
-      win = planck_window(len(y)+1,0.14)[0:len(y)]
+      win = planck_window(len(y)+1,0.10)[0:len(y)]
       
       if abs(y[0]-y[-1])<0.1*np.mean(np.abs(y)):#no windowing if signal is periodic
           win=1;
@@ -98,6 +98,13 @@ class wavefield:
           omega = omega[oi1:oi2];
           A = A[oi1:oi2];
           phase=phase[oi1:oi2];
+          
+          import matplotlib.pyplot as plt
+          #plt.figure();
+          #plt.plot(t,y);
+          #plt.plot(t,y*win);
+          #plt.plot(t,np.sum(A*np.exp(1j*(omega*t.reshape(t.size,1)+phase)),1).real);
+          #plt.show();
       print("Using the following angular wave frequencies: [rad/s],[m]")
       for (a,o) in zip(A,omega):
           print(str(round(o,2))+", "+str(a));
