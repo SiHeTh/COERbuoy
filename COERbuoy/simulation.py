@@ -67,23 +67,184 @@ class wave_series():#power is measured starting from t=0
             y=np.hstack([self.y,[ye]]);
         pandas.DataFrame(np.vstack((t,y)).transpose(),columns=["time","wave-elevation"]).round(6).to_csv(name,index=False)
        
+
+#new main function        
+def run (cWEC, cHyModel, wave_data, connection, omega_cut_off, filename):
+    
+    import time
+    from scipy.integrate import solve_ivp
+    
+    
+    init_condition=np.zeros(cWEC.states).tolist()
+    
+    # Setting the wave (processed in a seperate module)
+    wave=wavefield.wavefield.set_wave(wave_data.y,wave_data.t,omega_cut_off);
+    
+    # Calculating buoy data
+    cWEC.load_buoy(getattr(Floater,cHyModel),wave.xi,3000000,0);
+    # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
+    dt=utils.resolution;
+    steps=np.array(range(0,int(1/dt*wave_data.te)))*dt;
+    
+    # WEC reads in its parameters
+    cWEC.load_param();
+    
+    class history():
+        def __init__(self,x):
+            self.t=[0];
+            self.x=[];
+            for (i,e) in enumerate(x):
+                self.x.append([e]);
+        def add(self,t,x):
+            #while len(self.t)>0 and self.t[-1]+0.05>t:
+            #    self.t.pop();
+            #    for (i,e) in enumerate(x):
+            #        self.x[i].pop();
+            if (t>self.t[-1]+0.0000000125):
+                self.t.append(t);
+                for (i,e) in enumerate(x):
+                    self.x[i].append(e);
+        def get(self,i,t):
+            if (len(self.t)<2):
+                return t*0;
+            fin=interp1d(self.t,self.x[i],fill_value=0,bounds_error=False);
+            res=fin(t);
+            res[-1]=self.x[i][-1];
+            return res;
+          
+    
+    # This is the ODE function
+    def dynamics(t,x):
+
+      # to provide past sensor measures to the control interface, we need previous values of the ODE solution
+      # Herefore DDE (delayed differntial euqation) exists. 
+      # However, the implementations tested showed to be several orders of magnitude slower than the ODE-solver
+      # Needing the past values only at specific time steps, the values are stored and
+      # interpolated manually:
+      
+      dynamics.xlast.add(t,x.tolist()+[cWEC.get_force(x)]);
+      
+      
+      # While the ODE solver can jump forth and back in time; the control is only executed
+      # the first time a specific time is passed
+      # This is not _exact_, but a good compramise between computational complexity and accuracy
+      if utils.dt_controller<0 or t-dynamics.tcontrol>=utils.dt_controller-0.05*utils.dt_controller or t-dynamics.tcontrol<0:
+          tw=100;
+          tw1=tw-1;
+          tseq=np.linspace(t-tw1/4,t,int(tw));
+          dynamics.tcontrol=t;
+          
+          # In case the TCP/IP control interface is used (normal operation)
+          if connection:
+              msg_status=utils.msg_status;
+              # Prepare message sent to controller
+              msg={"time":tseq*msg_status[0],
+                   "wave":(np.sum(np.real(wave.get(tseq.reshape(tseq.size,1),0)[0]),1))*msg_status[1],
+                   "wave_forecast":(np.sum(np.real(wave.get(2*t-np.flip(tseq.reshape(tseq.size,1)),0)[0]),1))*msg_status[2],
+                   ##Wave dependent on the position not time; can be used for visualisation
+                   #"wave":(np.sum(wave1.get(t,np.linspace(60,0,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[1],
+                   #"wave_forecast":(np.sum(wave1.get(t,np.linspace(0,-60,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[2],
+                   "stroke_pos":dynamics.xlast.get(0,tseq)*msg_status[3],
+                   "stroke_speed":dynamics.xlast.get(1,tseq)*msg_status[4],
+                   "angular_pos":dynamics.xlast.get(2,tseq)*msg_status[5],
+                   "angular_speed":dynamics.xlast.get(3,tseq)*msg_status[6],
+                   "force":dynamics.xlast.get(-1,tseq)*msg_status[7],
+                   "test":(np.real(np.sum(wave.get(t,np.linspace(-14,14,int(tw)).reshape(tseq.size,1))[0],1)))*msg_status[8]#(np.sum(wave1.get(t,np.linspace(30,-30,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[8]
+                   
+                   }
+              # Exchange data with controller
+              data=connection.exchange_model(msg["time"],msg["wave"],msg["wave_forecast"],msg["stroke_pos"],msg["stroke_speed"],msg["angular_pos"],msg["angular_speed"],msg["force"],msg["test"])
+              
+              dynamics.PTOt=data["time"]
+              dynamics.PTO=data["pto"]
+              dynamics.brake=data["brake"]
+              
+          else:
+              # if the TCP/IP control interface is not used, apply a velocity dependent damping
+              # (for testing)
+              dynamics.PTOt=[t]
+              dynamics.PTO=[-cWEC.get_translator_speed(x)*dynamics.damping];
+              dynamics.brake=[0];
+      #Print progress
+      print("{:.0f}".format(100*t/dynamics.duration,0)+"% completed", end="\r");
+      i=np.abs(np.array(dynamics.PTOt)-t).argmin();
+      # Send the data to the WEC
+      out=cWEC.Calc(t,wave,x,dynamics.PTO[i],dynamics.brake[i],dynamics.ulast);
+      dynamics.ulast=cWEC.get_translator_speed(x);
+      return out;    
+
+    dynamics.ts=np.linspace(0,wave_data.t[-1]+4,int((wave_data.t[-1]+4)*cWEC.buoy.omega[-1]*2));
+    dynamics.ulast=0;
+    dynamics.latch_counter=0;
+    dynamics.tcontrol=0;
+    dynamics.PTO=[0];
+    dynamics.damping=cWEC.damping;#TODO: No damping not implemented yet
+    dynamics.PTOt=[0];
+    dynamics.brake=[0];
+    dynamics.duration=wave_data.te;
+    dynamics.xlast=history([0]*(len(init_condition)+1));
+    
+    if connection:
+        print("Using control interface with ip "+connection.ip+" at port " + str(connection.port) +".")
+        if host:
+            if (ctrl!=""):
+                #if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
+                print("Start "+str(" ".join(ctrl)))
+                process=subprocess.Popen(ctrl)
+                ctrl="";
+            connection.openH();
+        else:
+            connection.openC();
+    
+    print("\nRunning the simulation...")
+    t_start=time.time();
+
+    # Start the ODE-solver
+    sol = solve_ivp(dynamics,[0,wave_data.te],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=100,atol=100)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
+    print("Elapsed time :"+str(time.time()-t_start)+"\n");
+
+    
+    #For debugging: plot simulation results
+    #import matplotlib.pyplot as plt
+    #plt.figure();
+    #plt.plot(sol.t[:],np.transpose([np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:]]));
+    #plt.show();
+    
+    sol.t=sol.t+wave_data.t0;
+
+    
+    # Write the solution of the data frame
+    pandas.DataFrame(np.array([sol.t[:],np.sum(np.real(wave.get(sol.t.reshape(sol.t.size,1),0)[0]),1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/np.pi,sol.y[3,:]*180/np.pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
+    
+    
+    
+    # free data in memory
+    wave.clear();
+    del wave;
+    cWEC.release();
+    
+    # CLose the TCP/IP control interface connection
+    if connection:
+        connection.close()
+        if process != 0:
+            process.wait()
+        time.sleep(5);
+    return sol;
+         
 # Main program
 def start_simu (**kwargs):
     host=True;
     interface=False;
     utils.get();
-    conn_ctrl=connection.connection(ip = utils.conn_ip, port = utils.conn_port);
-
+    conn_ctrl=None;
 
     import subprocess;
     import time
     import importlib
-    from scipy.integrate import solve_ivp
     
     
     damping=0;
     pi=np.pi;
-    dt=utils.resolution;
     process=0;
     ctrl="";
     ctrlcmd="";
@@ -104,7 +265,6 @@ def start_simu (**kwargs):
 
     
     wec=dyn_wec.WEC();
-    init_condition=np.zeros(wec.states).tolist()
     
     #Set host or client mode
     if "host" in kwargs:
@@ -151,6 +311,9 @@ def start_simu (**kwargs):
             interface=True;
     teval=0;
     
+    if interface:
+        conn_ctrl=connection.connection(ip = utils.conn_ip, port = utils.conn_port);
+        
     # t0 specify the transient time to get the device in steady state
     # for t<t0 the data is not logged
     if "t0" in kwargs:
@@ -188,11 +351,11 @@ def start_simu (**kwargs):
     
     
     omega_cut_off=wec.omega_cut_off;
-    # Setting the wave (processed in a seperate module)
-    wave1=wavefield.wavefield.set_wave(wavedata.y,wavedata.t,omega_cut_off);
     
     #Set filename
+    wave1=wavefield.wavefield.set_wave(wavedata.y,wavedata.t,omega_cut_off);
     filename=wavedata.name.replace("_","")+"_p_"+f'{wave1.get_period():.2f}'+"_h_"+f'{wave1.get_height():.2f}'+"_"+re.split("[\\,/,\s]",ctrlname.replace("_","").replace(".",""))[-1]+"_"+re.split("[\\,/,.,-,\s]",utils.wec_dir.replace("_",""))[-1]+"_"+utils.class_hydro.replace("_","")+".csv";#Standard format
+    wave1.clear();
     if "name" in kwargs: #use custom file name if specified
         if os.path.isdir(kwargs["name"]):
             filename=os.path.join(kwargs["name"],filename);
@@ -200,149 +363,11 @@ def start_simu (**kwargs):
             filename=filename;
         else:
             filename=kwargs["name"];
-    
-    # Calculating buoy data
-    wec.load_buoy(getattr(Floater,utils.class_hydro),wave1.xi,3000000,0);
-    # Set the time steps for which we want the solution from ODE solver, equally spaced with dt
-    steps=np.array(range(0,int(1/dt*wavedata.te)))*dt;
-    
-    # WEC reads in its parameters
-    wec.load_param();
-    
-    if kwargs["control"]=="linear":
-        damping=wec.damping;
-            
-    class history():
-        def __init__(self,x):
-            self.t=[0];
-            self.x=[];
-            for (i,e) in enumerate(x):
-                self.x.append([e]);
-        def add(self,t,x):
-            #while len(self.t)>0 and self.t[-1]+0.05>t:
-            #    self.t.pop();
-            #    for (i,e) in enumerate(x):
-            #        self.x[i].pop();
-            if (t>self.t[-1]+0.0000000125):
-                self.t.append(t);
-                for (i,e) in enumerate(x):
-                    self.x[i].append(e);
-        def get(self,i,t):
-            if (len(self.t)<2):
-                return t*0;
-            fin=interp1d(self.t,self.x[i],fill_value=0,bounds_error=False);
-            res=fin(t);
-            res[-1]=self.x[i][-1];
-            return res;
-          
-    
-    # This is the ODE function
-    def dynamics(t,x):
 
-      # to provide past sensor measures to the control interface, we need previous values of the ODE solution
-      # Herefore DDE (delayed differntial euqation) exists. 
-      # However, the implementations tested showed to be several orders of magnitude slower than the ODE-solver
-      # Needing the past values only at specific time steps, the values are stored and
-      # interpolated manually:
-      
-      dynamics.xlast.add(t,x.tolist()+[wec.get_force(x)]);
-      
-      
-      # While the ODE solver can jump forth and back in time; the control is only executed
-      # the first time a specific time is passed
-      # This is not _exact_, but a good compramise between computational complexity and accuracy
-      if utils.dt_controller<0 or t-dynamics.tcontrol>=utils.dt_controller-0.05*utils.dt_controller or t-dynamics.tcontrol<0:
-          tw=100;
-          tw1=tw-1;
-          tseq=np.linspace(t-tw1/4,t,int(tw));
-          dynamics.tcontrol=t;
-          
-          # In case the TCP/IP control interface is used (normal operation)
-          if interface:
-              msg_status=utils.msg_status;
-              # Prepare message sent to controller
-              msg={"time":tseq*msg_status[0],
-                   "wave":(np.sum(np.real(wave1.get(tseq.reshape(tseq.size,1),0)[0]),1))*msg_status[1],
-                   "wave_forecast":(np.sum(np.real(wave1.get(2*t-np.flip(tseq.reshape(tseq.size,1)),0)[0]),1))*msg_status[2],
-                   ##Wave dependent on the position not time; can be used for visualisation
-                   #"wave":(np.sum(wave1.get(t,np.linspace(60,0,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[1],
-                   #"wave_forecast":(np.sum(wave1.get(t,np.linspace(0,-60,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[2],
-                   "stroke_pos":dynamics.xlast.get(0,tseq)*msg_status[3],
-                   "stroke_speed":dynamics.xlast.get(1,tseq)*msg_status[4],
-                   "angular_pos":dynamics.xlast.get(2,tseq)*msg_status[5],
-                   "angular_speed":dynamics.xlast.get(3,tseq)*msg_status[6],
-                   "force":dynamics.xlast.get(-1,tseq)*msg_status[7],
-                   "test":(np.real(np.sum(wave1.get(t,np.linspace(-14,14,int(tw)).reshape(tseq.size,1))[0],1)))*msg_status[8]#(np.sum(wave1.get(t,np.linspace(30,-30,int(tw)).reshape(tseq.size,1))[0],1))*msg_status[8]
-                   
-                   }
-              # Exchange data with controller
-              data=conn_ctrl.exchange_model(msg["time"],msg["wave"],msg["wave_forecast"],msg["stroke_pos"],msg["stroke_speed"],msg["angular_pos"],msg["angular_speed"],msg["force"],msg["test"])
-              
-              dynamics.PTOt=data["time"]
-              dynamics.PTO=data["pto"]
-              dynamics.brake=data["brake"]
-              
-          else:
-              # if the TCP/IP control interface is not used, apply a velocity dependent damping
-              # (for testing)
-              dynamics.PTOt=[t]
-              dynamics.PTO=[-wec.get_translator_speed(x)*dynamics.damping];
-              dynamics.brake=[0];
-      #Print progress
-      print("{:.0f}".format(100*t/dynamics.duration,0)+"% completed", end="\r");
-      i=np.abs(np.array(dynamics.PTOt)-t).argmin();
-      # Send the data to the WEC
-      out=wec.Calc(t,wave1,x,dynamics.PTO[i],dynamics.brake[i],dynamics.ulast);
-      dynamics.ulast=wec.get_translator_speed(x);
-      return out;    
 
-    dynamics.ts=np.linspace(0,wavedata.t[-1]+4,int((wavedata.t[-1]+4)*wec.buoy.omega[-1]*2));
-    dynamics.ulast=0;
-    dynamics.latch_counter=0;
-    dynamics.tcontrol=0;
-    dynamics.PTO=[0];
-    dynamics.damping=damping;
-    dynamics.PTOt=[0];
-    dynamics.brake=[0];
-    dynamics.duration=wavedata.te;
-    dynamics.xlast=history([0]*(len(init_condition)+1));
+    #####----------------
+    sol=run(wec,utils.class_hydro,wavedata,conn_ctrl,omega_cut_off,filename);
     
-    if interface:
-        print("Using control interface with ip "+conn_ctrl.ip+" at port " + str(conn_ctrl.port) +".")
-        if host:
-            if (ctrl!=""):
-                #if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
-                print("Start "+str(" ".join(ctrl)))
-                process=subprocess.Popen(ctrl)
-                ctrl="";
-            conn_ctrl.openH();
-        else:
-            conn_ctrl.openC();
-    
-    print("\nRunning the simulation...")
-    t_start=time.time();
-
-    # Start the ODE-solver
-    sol = solve_ivp(dynamics,[0,wavedata.te],init_condition,t_eval=steps.tolist(),max_step=utils.ode_time_step,rtol=100,atol=100)#state vecor[z, dz, x, dx, delta, ddelta, slidex, dslidex]
-    print("Elapsed time :"+str(time.time()-t_start)+"\n");
-    tw=sol.t;
-    sol.t=sol.t+wavedata.t0;
-
-    
-    # Write the solution of the data frame
-    pandas.DataFrame(np.array([sol.t[:],np.sum(np.real(wave1.get(tw.reshape(tw.size,1),0)[0]),1),sol.y[0,:],sol.y[1,:],sol.y[2,:]*180/pi,sol.y[3,:]*180/pi,sol.y[7,:],sol.y[8,:]]).transpose(),columns=["time [s]","wave [m]","stroke [m]","stroke speed [m/s]","angle [deg]","angular_speed [deg/s]","F_PTO [N]","Energy [J]"]).round(3).to_csv(filename,index=False)
-    
-    
-    #For debugging: plot simulation results
-    #import matplotlib.pyplot as plt
-    #plt.figure();
-    #plt.plot(sol.t[:],np.transpose([np.sum(wave1.get(sol.t.reshape(sol.t.size,1),0)[0],1),sol.y[0,:]]));
-    #plt.show();
-    
-    # free data in memory
-    wave1.clear();
-    del wave1;
-    wec.release();
     
     #Cut data to exclude transient data (if applicable) for power calculation
     s1=np.argmax(sol.t>=0)
@@ -351,12 +376,7 @@ def start_simu (**kwargs):
     print("Mean absorbed power: "+str((power/1000).round(2))+" kW")
     
     
-    # CLose the TCP/IP control interface connection
-    if interface:
-        conn_ctrl.close()
-        if process != 0:
-            process.wait()
-        time.sleep(5);
+
         
     # return the generated electrical energy    
     return [sol,filename,power.round(2)];
