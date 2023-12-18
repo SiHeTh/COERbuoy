@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
    name='COERbuoy',
-   version='0.3.5',
+   version='0.3.6',
    author='Simon H. Thomas',
    author_email='sthomas20@web.de',
    packages=['COERbuoy'],

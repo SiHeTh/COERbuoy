@@ -184,17 +184,7 @@ def run (cWEC, cHyModel, wave_data, connection, omega_cut_off, filename):
     dynamics.duration=wave_data.te;
     dynamics.xlast=history([0]*(len(init_condition)+1));
     
-    if connection:
-        print("Using control interface with ip "+connection.ip+" at port " + str(connection.port) +".")
-        if host:
-            if (ctrl!=""):
-                #if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
-                print("Start "+str(" ".join(ctrl)))
-                process=subprocess.Popen(ctrl)
-                ctrl="";
-            connection.openH();
-        else:
-            connection.openC();
+   
     
     print("\nRunning the simulation...")
     t_start=time.time();
@@ -223,12 +213,6 @@ def run (cWEC, cHyModel, wave_data, connection, omega_cut_off, filename):
     del wave;
     cWEC.release();
     
-    # CLose the TCP/IP control interface connection
-    if connection:
-        connection.close()
-        if process != 0:
-            process.wait()
-        time.sleep(5);
     return sol;
          
 # Main program
@@ -312,7 +296,13 @@ def start_simu (**kwargs):
     teval=0;
     
     if interface:
-        conn_ctrl=connection.connection(ip = utils.conn_ip, port = utils.conn_port);
+        ip=utils.conn_ip;
+        port=utils.conn_port;
+        if "ip" in kwargs:
+            ip=kwargs["ip"];
+        if "port" in kwargs:
+            port=int(kwargs["port"]);
+        conn_ctrl=connection.connection(ip = ip, port = port);
         
     # t0 specify the transient time to get the device in steady state
     # for t<t0 the data is not logged
@@ -364,6 +354,17 @@ def start_simu (**kwargs):
         else:
             filename=kwargs["name"];
 
+    if connection:
+        print("Using control interface with ip "+conn_ctrl.ip+" at port " + str(conn_ctrl.port) +".")
+        if host:
+            if (ctrl!=""):
+                if ctrlcmd=="": #if no extension, or extension unknown, we assume it is an executaböe
+                    print("Start "+str(" ".join(ctrl)))
+                    process=subprocess.Popen(ctrl)
+                    ctrl="";
+            conn_ctrl.openH();
+        else:
+            conn_ctrl.openC();
 
     #####----------------
     sol=run(wec,utils.class_hydro,wavedata,conn_ctrl,omega_cut_off,filename);
@@ -376,6 +377,12 @@ def start_simu (**kwargs):
     print("Mean absorbed power: "+str((power/1000).round(2))+" kW")
     
     
+    # CLose the TCP/IP control interface connection
+    if conn_ctrl:
+        conn_ctrl.close()
+        if process != 0:
+            process.wait()
+        time.sleep(5);
 
         
     # return the generated electrical energy    
